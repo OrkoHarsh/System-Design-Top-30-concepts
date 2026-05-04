@@ -1,0 +1,3171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design Mastery</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg2: #111118;
+  --bg3: #1a1a26;
+  --surface: #16161f;
+  --surface2: #1e1e2e;
+  --border: rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8e8f0;
+  --muted: #6b6b85;
+  --accent: #7c6aff;
+  --accent2: #ff6a6a;
+  --accent3: #6affb4;
+  --accent4: #ffb86a;
+  --glow: rgba(124,106,255,0.15);
+  --radius: 12px;
+  --radius-lg: 20px;
+
+  /* Groups */
+  --g1: #7c6aff; --g1s: rgba(124,106,255,0.1);
+  --g2: #ff6a6a; --g2s: rgba(255,106,106,0.1);
+  --g3: #6affb4; --g3s: rgba(106,255,180,0.1);
+  --g4: #ffb86a; --g4s: rgba(255,184,106,0.1);
+  --g5: #ff6ac8; --g5s: rgba(255,106,200,0.1);
+  --g6: #6ac8ff; --g6s: rgba(106,200,255,0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── CANVAS BG ─── */
+#bg-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* ─── LAYOUT ─── */
+.app { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.sidebar-logo {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-logo h1 {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.sidebar-logo p {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+.sidebar-progress {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.progress-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.progress-bar {
+  height: 3px;
+  background: var(--border2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 2px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+.group-section { padding: 8px 0; }
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 24px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.group-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.concept-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 24px 8px 36px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.concept-btn:hover { color: var(--text); background: var(--border); }
+
+.concept-btn.active {
+  color: var(--text);
+  background: var(--glow);
+}
+
+.concept-btn.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--accent);
+  border-radius: 0 2px 2px 0;
+}
+
+.concept-btn.done .check {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: #000;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.concept-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  min-width: 16px;
+}
+
+/* ─── MAIN ─── */
+.main {
+  margin-left: 280px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ─── HERO ─── */
+.hero {
+  padding: 80px 80px 60px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--glow);
+  border: 1px solid rgba(124,106,255,0.2);
+  border-radius: 100px;
+  font-size: 11px;
+  color: var(--accent);
+  margin-bottom: 24px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.hero h2 {
+  font-size: 52px;
+  font-weight: 800;
+  letter-spacing: -2px;
+  line-height: 1.05;
+  max-width: 600px;
+  margin-bottom: 20px;
+}
+
+.hero h2 span { color: var(--accent); }
+
+.hero p {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 520px;
+  line-height: 1.7;
+  font-weight: 400;
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 40px;
+  margin-top: 40px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-num {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.stat-label { font-size: 12px; color: var(--muted); }
+
+.hero-orb {
+  position: absolute;
+  right: 60px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 300px;
+  height: 300px;
+  pointer-events: none;
+}
+
+/* ─── CONTENT ─── */
+.content { flex: 1; }
+
+/* ─── CONCEPT VIEW ─── */
+.concept-view {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.concept-view.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.concept-header {
+  padding: 40px 80px 0;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 40px;
+}
+
+.concept-group-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.concept-title {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+
+.concept-subtitle {
+  font-size: 16px;
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 640px;
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+}
+
+.concept-body {
+  padding: 40px 80px;
+}
+
+/* ─── DIAGRAM AREA ─── */
+.diagram-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+  min-height: 300px;
+}
+
+.diagram-container::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.5;
+}
+
+/* ─── INTERACTIVE ELEMENTS ─── */
+.interactive-zone {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-top: 24px;
+}
+
+.interactive-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.interactive-title::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ─── BUTTONS ─── */
+.btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.btn:hover { background: var(--bg3); border-color: var(--accent); color: var(--accent); }
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover { background: #6857ee; color: #fff; border-color: #6857ee; }
+
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+
+/* ─── QUIZ ─── */
+.quiz-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  margin-top: 32px;
+}
+
+.quiz-question {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  line-height: 1.4;
+}
+
+.quiz-options {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.quiz-option {
+  padding: 14px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+  transition: all 0.2s;
+  text-align: left;
+  font-family: 'Syne', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.quiz-option:hover { border-color: var(--accent); background: var(--glow); }
+.quiz-option.correct { border-color: var(--accent3); background: rgba(106,255,180,0.08); color: var(--accent3); }
+.quiz-option.wrong { border-color: var(--accent2); background: rgba(255,106,106,0.08); color: var(--accent2); }
+
+.quiz-letter {
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.quiz-feedback {
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  display: none;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.quiz-feedback.correct {
+  background: rgba(106,255,180,0.08);
+  border: 1px solid rgba(106,255,180,0.2);
+  color: var(--accent3);
+  display: block;
+}
+
+.quiz-feedback.wrong {
+  background: rgba(255,106,106,0.08);
+  border: 1px solid rgba(255,106,106,0.2);
+  color: var(--accent2);
+  display: block;
+}
+
+/* ─── NAV FOOTER ─── */
+.concept-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32px 80px;
+  border-top: 1px solid var(--border);
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.nav-mark-done {
+  padding: 12px 24px;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-mark-done:hover { background: #6857ee; transform: translateY(-1px); }
+.nav-mark-done.done { background: var(--accent3); color: #000; }
+
+/* ─── CONCEPT CARD GRID (home) ─── */
+.home-view { display: none; }
+.home-view.active { display: block; }
+
+.groups-grid {
+  padding: 40px 80px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+.group-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.group-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  transition: opacity 0.2s;
+}
+
+.group-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border2);
+}
+
+.group-card:hover::before { opacity: 1; }
+
+.gc-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.gc-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -0.3px;
+}
+
+.gc-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.gc-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ─── INFO CARDS ─── */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.info-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.info-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.info-card-content {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+/* ─── KEY POINTS ─── */
+.key-points {
+  margin-top: 24px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.key-points-header {
+  padding: 14px 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.key-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.key-point:last-child { border-bottom: none; }
+
+.key-point-icon {
+  width: 20px; height: 20px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ─── NETWORK ANIMATION ─── */
+.network-vis {
+  width: 100%;
+  height: 280px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ─── CODE BLOCK ─── */
+.code-block {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-x: auto;
+  margin-top: 16px;
+}
+
+.code-keyword { color: var(--accent); }
+.code-string { color: var(--accent3); }
+.code-comment { color: var(--muted); }
+.code-method { color: var(--accent4); }
+
+/* ─── TABS ─── */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.tab {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  font-family: 'Syne', sans-serif;
+}
+
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* ─── CHIP ─── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 6px;
+  margin-bottom: 6px;
+}
+
+/* ─── COMPARISON TABLE ─── */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 16px;
+}
+
+.compare-table th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.compare-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+}
+
+.compare-table tr:last-child td { border-bottom: none; }
+
+/* ─── FLOW ANIMATION ─── */
+@keyframes flowRight {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes flowDown {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.flow-arrow {
+  stroke-dasharray: 8 4;
+  animation: flowRight 1.5s linear infinite;
+}
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 9999;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ─── MINI MAP ─── */
+.mini-map {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+}
+
+.mini-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mini-dot.done { background: var(--accent3); }
+.mini-dot.active { background: var(--accent); transform: scale(1.5); }
+.mini-dot:hover { transform: scale(1.4); }
+
+
+/* ─── MOBILE HAMBURGER ─── */
+.mobile-header {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 200;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+.mobile-logo {
+  font-size: 16px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hamburger {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.hamburger span { display: block; width: 18px; height: 2px; background: var(--text); border-radius: 2px; transition: all 0.3s; }
+.hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px,5px); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px,-5px); }
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 150; backdrop-filter: blur(2px); }
+.sidebar-overlay.open { display: block; }
+
+@media (max-width: 768px) {
+  .mobile-header { display: flex; }
+  .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; z-index: 160; width: min(280px, 85vw); top: 0; }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; padding-top: 56px; }
+  .hero { padding: 28px 20px 28px; }
+  .hero h2 { font-size: 28px; letter-spacing: -1px; }
+  .hero p { font-size: 14px; }
+  .hero-stats { gap: 20px; }
+  .stat-num { font-size: 22px; }
+  .hero-orb { display: none; }
+  .groups-grid { padding: 20px 16px; grid-template-columns: 1fr; gap: 12px; }
+  .concept-header { padding: 20px 16px 20px; }
+  .concept-title { font-size: 26px; letter-spacing: -0.5px; }
+  .concept-subtitle { font-size: 14px; }
+  .concept-body { padding: 20px 16px; }
+  .concept-nav { padding: 20px 16px; flex-wrap: wrap; gap: 10px; }
+  .nav-btn { font-size: 12px; padding: 10px 12px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nav-mark-done { order: -1; width: 100%; text-align: center; padding: 12px; }
+  .info-grid { grid-template-columns: 1fr !important; }
+  .diagram-container { padding: 16px 12px; }
+  .quiz-box { padding: 20px 16px; }
+  .quiz-question { font-size: 15px; }
+  .quiz-option { padding: 12px 14px; font-size: 13px; }
+}
+
+@media (max-width: 480px) {
+  .hero h2 { font-size: 24px; }
+  .concept-title { font-size: 21px; }
+  .hero-stats { flex-wrap: wrap; }
+  .compare-table { font-size: 11px; }
+  .compare-table th, .compare-table td { padding: 6px 8px; }
+}
+
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- MOBILE HEADER -->
+<div class="mobile-header" id="mobile-header">
+  <div class="mobile-logo">⬡ SysDesign</div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div style="font-size:11px;color:var(--muted)" id="mobile-progress-text">0/30</div>
+    <div style="width:50px;height:3px;background:var(--border2);border-radius:2px;overflow:hidden">
+      <div id="mobile-progress-fill" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width 0.5s;border-radius:2px"></div>
+    </div>
+    <div class="hamburger" id="hamburger" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</div>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <h1>⬡ SysDesign</h1>
+      <p>30 concepts · interactive guide</p>
+    </div>
+    <div class="sidebar-progress">
+      <div class="progress-label">
+        <span>Progress</span>
+        <span id="progress-pct">0 / 30</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+    <div id="sidebar-nav"></div>
+    <div class="mini-map" id="mini-map"></div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- HOME -->
+    <div class="home-view active" id="home-view">
+      <div class="hero">
+        <div class="hero-tag">✦ Interactive Learning Experience</div>
+        <h2>Master System<br><span>Design</span></h2>
+        <p>30 foundational concepts, from networking primitives to distributed architecture patterns. Learn by doing — every concept has interactive diagrams, quizzes, and visual demos.</p>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-num" style="color:var(--accent)">30</div>
+            <div class="stat-label">Concepts</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" style="color:var(--accent2)">6</div>
+            <div class="stat-label">Groups</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" style="color:var(--accent3)">∞</div>
+            <div class="stat-label">Replays</div>
+          </div>
+        </div>
+        <canvas class="hero-orb" id="hero-canvas"></canvas>
+      </div>
+      <div class="groups-grid" id="groups-grid"></div>
+    </div>
+
+    <!-- CONCEPT VIEWS (generated) -->
+    <div id="concept-views"></div>
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span id="toast-icon">✓</span>
+  <span id="toast-msg">Concept mastered!</span>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────
+const GROUPS = [
+  { id: 1, name: 'Networking Foundations', color: '#7c6aff', bg: 'rgba(124,106,255,0.1)', num: '01' },
+  { id: 2, name: 'APIs & Communication', color: '#ff6a6a', bg: 'rgba(255,106,106,0.1)', num: '02' },
+  { id: 3, name: 'Data Storage', color: '#6affb4', bg: 'rgba(106,255,180,0.1)', num: '03' },
+  { id: 4, name: 'Scaling', color: '#ffb86a', bg: 'rgba(255,184,106,0.1)', num: '04' },
+  { id: 5, name: 'Distributed Systems', color: '#ff6ac8', bg: 'rgba(255,106,200,0.1)', num: '05' },
+  { id: 6, name: 'Architecture Patterns', color: '#6ac8ff', bg: 'rgba(106,200,255,0.1)', num: '06' },
+];
+
+const CONCEPTS = [
+  // Group 1
+  {
+    id: 1, group: 1, num: '01',
+    title: 'Client-Server Model',
+    subtitle: 'The foundation of every web application — how devices communicate over the internet.',
+    explain: `Every web application follows a simple pattern: a <strong>client</strong> (browser, app) sends a request to a <strong>server</strong>, which processes it and returns a response. This separation lets you scale them independently.`,
+    keyPoints: [
+      { icon: '→', text: 'Client initiates all requests — server only responds' },
+      { icon: '⚙', text: 'Server handles business logic, auth, and data retrieval' },
+      { icon: '⎇', text: 'Frontend and backend can be updated independently' },
+      { icon: '✕', text: 'Servers can have multiple clients simultaneously' },
+    ],
+    useCases: ['Web browsers', 'Mobile apps', 'REST APIs', 'Database connections'],
+    quiz: {
+      q: 'In the client-server model, who initiates communication?',
+      opts: ['The server pushes data automatically', 'The client always initiates requests', 'Both can initiate equally', 'A third-party broker decides'],
+      correct: 1,
+      feedback: '✓ The client always initiates! Servers listen passively and only respond when asked. This is fundamental to HTTP.'
+    },
+    interactive: 'clientserver'
+  },
+  {
+    id: 2, group: 1, num: '02',
+    title: 'IP Address',
+    subtitle: 'The unique identifier that lets every device on the internet find and talk to each other.',
+    explain: `Every device connected to the internet has an <strong>IP address</strong> — a unique numerical label. IPv4 gives ~4.3 billion addresses (like 192.168.1.1), while IPv6 offers virtually unlimited addresses (like 2001:0db8::1).`,
+    keyPoints: [
+      { icon: '📍', text: 'IPv4: 32-bit, ~4.3 billion addresses (192.168.1.1)' },
+      { icon: '🌐', text: 'IPv6: 128-bit, virtually unlimited addresses' },
+      { icon: '🏠', text: 'Private IPs (192.168.x.x) vs Public IPs (routable)' },
+      { icon: '→', text: 'Every server, load balancer, and DB node has an IP' },
+    ],
+    useCases: ['Server routing', 'Network firewalls', 'Load balancers', 'DNS resolution'],
+    quiz: {
+      q: 'Why is IPv6 being adopted to replace IPv4?',
+      opts: ['IPv6 is faster', 'IPv4 addresses are nearly exhausted', 'IPv6 is more secure by default', 'IPv4 requires more bandwidth'],
+      correct: 1,
+      feedback: '✓ IPv4 only has ~4.3 billion addresses — not enough for billions of devices. IPv6 solves this with a virtually unlimited address space.'
+    },
+    interactive: 'ipaddress'
+  },
+  {
+    id: 3, group: 1, num: '03',
+    title: 'DNS',
+    subtitle: 'The internet\'s phone book — translating human-readable domain names to IP addresses.',
+    explain: `DNS (Domain Name System) translates "google.com" into an IP like 142.250.80.46 through a <strong>hierarchical resolution chain</strong>: browser cache → DNS resolver → root servers → TLD servers → authoritative nameserver.`,
+    keyPoints: [
+      { icon: '📖', text: 'Root servers know all TLD locations (.com, .org, .net)' },
+      { icon: '⚡', text: 'Results are cached at every level to reduce lookups' },
+      { icon: '⚖', text: 'DNS can return different IPs for load balancing' },
+      { icon: '🔄', text: 'TTL controls how long records stay cached' },
+    ],
+    useCases: ['Website access', 'Load balancing', 'Failover routing', 'CDN distribution'],
+    quiz: {
+      q: 'What is DNS TTL used for?',
+      opts: ['Time to load a webpage', 'How long a DNS record is cached', 'Transfer speed limit', 'Time to live for server connections'],
+      correct: 1,
+      feedback: '✓ TTL (Time To Live) tells resolvers how many seconds to cache a DNS record before re-querying. Lower TTL = faster failover but more DNS queries.'
+    },
+    interactive: 'dns'
+  },
+  {
+    id: 4, group: 1, num: '04',
+    title: 'Proxy vs Reverse Proxy',
+    subtitle: 'Middlemen that protect identities, distribute load, and add functionality between clients and servers.',
+    explain: `A <strong>forward proxy</strong> sits in front of clients (hides client from server — like a VPN). A <strong>reverse proxy</strong> sits in front of servers (hides servers from clients — like Nginx). Reverse proxies are critical for load balancing, SSL termination, and caching.`,
+    keyPoints: [
+      { icon: '🛡', text: 'Forward proxy: hides client identity (VPN, corporate proxy)' },
+      { icon: '⚡', text: 'Reverse proxy: hides server infrastructure (Nginx, HAProxy)' },
+      { icon: '🔒', text: 'Reverse proxies handle SSL termination centrally' },
+      { icon: '⚖', text: 'Reverse proxies enable load balancing transparently' },
+    ],
+    useCases: ['VPNs', 'Nginx', 'CDNs', 'API Gateways', 'HAProxy'],
+    quiz: {
+      q: 'Which proxy type hides the server\'s identity from clients?',
+      opts: ['Forward proxy', 'Reverse proxy', 'Transparent proxy', 'Anonymous proxy'],
+      correct: 1,
+      feedback: '✓ A reverse proxy sits in front of servers — clients think they\'re talking to one server, but it routes to many backends. Nginx is a classic example.'
+    },
+    interactive: 'proxy'
+  },
+  {
+    id: 5, group: 1, num: '05',
+    title: 'Latency',
+    subtitle: 'The time data takes to travel from source to destination — and why it matters enormously for UX.',
+    explain: `Latency is measured in milliseconds and comes from: <strong>network distance</strong> (speed of light in fiber), <strong>serialization</strong> (data encoding), <strong>server processing</strong>, and <strong>queuing delays</strong>. You cannot beat physics — Mumbai to New York always takes longer than Mumbai to a nearby CDN node.`,
+    keyPoints: [
+      { icon: '⏱', text: '100ms: barely noticeable; 1s: sluggish; 3s: users leave' },
+      { icon: '🌍', text: 'Speed of light in fiber: ~200,000 km/s (~67% of light)' },
+      { icon: '📦', text: 'CDNs reduce latency by serving from edge nodes nearby' },
+      { icon: '💾', text: 'Caching eliminates round trips entirely' },
+    ],
+    useCases: ['CDN placement', 'Regional deployments', 'Database caching', 'Connection pooling'],
+    quiz: {
+      q: 'What is the PRIMARY source of latency between distant servers?',
+      opts: ['Server CPU speed', 'Database query time', 'Physical distance (speed of light)', 'Network bandwidth'],
+      correct: 2,
+      feedback: '✓ Physics is the limit! Light (and thus data) travels ~200,000 km/s in fiber. A round-trip from New York to London is ~70ms minimum — you cannot optimize away distance.'
+    },
+    interactive: 'latency'
+  },
+  {
+    id: 6, group: 1, num: '06',
+    title: 'HTTP / HTTPS',
+    subtitle: 'The protocol language of the web — how clients and servers structure their conversations.',
+    explain: `HTTP is <strong>stateless</strong> — each request is independent. HTTPS adds TLS encryption, requiring a handshake before data flows. Key concepts: methods (GET/POST/PUT/DELETE), status codes (200/404/500), and headers (auth, caching, content-type).`,
+    keyPoints: [
+      { icon: '🔄', text: 'Stateless: no memory between requests (use cookies/tokens)' },
+      { icon: '🔒', text: 'HTTPS = HTTP + TLS encryption (prevents eavesdropping)' },
+      { icon: '📊', text: 'Status codes: 2xx success, 3xx redirect, 4xx client error, 5xx server error' },
+      { icon: '📋', text: 'Headers carry auth tokens, cache directives, content types' },
+    ],
+    useCases: ['REST APIs', 'Web browsers', 'Webhooks', 'Microservice communication'],
+    quiz: {
+      q: 'What does "HTTP is stateless" mean?',
+      opts: ['HTTP doesn\'t support authentication', 'Each request is independent — server has no memory of previous requests', 'HTTP doesn\'t support cookies', 'Servers can\'t store sessions'],
+      correct: 1,
+      feedback: '✓ Stateless means every request must carry all needed context. That\'s why JWT tokens or session IDs are sent with every request — the server doesn\'t remember you!'
+    },
+    interactive: 'http'
+  },
+  // Group 2
+  {
+    id: 7, group: 2, num: '07',
+    title: 'APIs',
+    subtitle: 'Contracts between software — defining what you can request and what you\'ll get back.',
+    explain: `An API (Application Programming Interface) is a contract between two software systems. It defines <strong>endpoints</strong> (URLs), <strong>request format</strong> (parameters, body), and <strong>response format</strong> (JSON, XML). Most modern APIs use JSON over HTTP.`,
+    keyPoints: [
+      { icon: '📄', text: 'API = interface contract; implementation is hidden' },
+      { icon: '🔑', text: 'Authentication via API keys, JWT, or OAuth tokens' },
+      { icon: '📊', text: 'Most APIs return JSON — lightweight and human-readable' },
+      { icon: '📖', text: 'OpenAPI/Swagger for documentation and validation' },
+    ],
+    useCases: ['Stripe payments', 'Google Maps', 'Twitter/X', 'Internal microservices'],
+    quiz: {
+      q: 'What is the "restaurant menu" analogy for APIs teaching us?',
+      opts: ['APIs are optional extras', 'You interact through a defined interface without knowing internal details', 'APIs serve food automatically', 'APIs require you to be a chef'],
+      correct: 1,
+      feedback: '✓ The menu is the interface — you order from it without entering the kitchen. The API is your menu: you request what\'s on it without needing to know how the server works.'
+    },
+    interactive: 'api'
+  },
+  {
+    id: 8, group: 2, num: '08',
+    title: 'REST API',
+    subtitle: 'The most widely used API style — resources, HTTP methods, and uniform interfaces.',
+    explain: `REST (Representational State Transfer) treats everything as a <strong>resource</strong> with a URL, and uses HTTP methods to interact: <strong>GET</strong> (read), <strong>POST</strong> (create), <strong>PUT/PATCH</strong> (update), <strong>DELETE</strong> (remove). It's stateless and cacheable.`,
+    keyPoints: [
+      { icon: '📁', text: 'Resources have clear URLs: /users, /users/123, /orders' },
+      { icon: '🔄', text: 'CRUD maps to GET, POST, PUT/PATCH, DELETE' },
+      { icon: '⚡', text: 'Stateless: no session on server — scales horizontally' },
+      { icon: '💾', text: 'GET responses can be cached (unlike POST/PUT)' },
+    ],
+    useCases: ['Most web APIs', 'Mobile backends', 'Microservices', 'Public APIs'],
+    quiz: {
+      q: 'To update a user\'s email in a REST API, which method and endpoint?',
+      opts: ['GET /update/user/123', 'PATCH /users/123', 'POST /user-update', 'PUT /emails/new'],
+      correct: 1,
+      feedback: '✓ PATCH /users/123 — PATCH is for partial updates. PUT /users/123 would also work (full replacement). The resource is /users/123 because it\'s acting on that specific user.'
+    },
+    interactive: 'rest'
+  },
+  {
+    id: 9, group: 2, num: '09',
+    title: 'GraphQL',
+    subtitle: 'Query exactly what you need — no over-fetching, no under-fetching, one request.',
+    explain: `GraphQL (by Facebook) lets clients specify exactly the data shape they need in a single query. Instead of multiple REST endpoints, one query can fetch nested related data. The server resolves each field independently.`,
+    keyPoints: [
+      { icon: '🎯', text: 'Ask for exactly the fields you need — nothing extra' },
+      { icon: '🔗', text: 'One request can fetch nested related data (user + posts + comments)' },
+      { icon: '📊', text: 'Strongly typed schema — self-documenting API' },
+      { icon: '⚠', text: 'N+1 query problem, caching complexity, schema overhead' },
+    ],
+    useCases: ['Social media feeds', 'Complex dashboards', 'Mobile apps (bandwidth sensitive)', 'GitHub API v4'],
+    quiz: {
+      q: 'When does GraphQL shine over REST?',
+      opts: ['When you need simple CRUD operations', 'When clients need flexible, nested data in fewer requests', 'When caching is the top priority', 'When the API is used by only one client type'],
+      correct: 1,
+      feedback: '✓ GraphQL excels when different clients (mobile vs web) need different data shapes, or when you\'d need multiple REST calls to assemble one view.'
+    },
+    interactive: 'graphql'
+  },
+  {
+    id: 10, group: 2, num: '10',
+    title: 'WebSockets',
+    subtitle: 'Persistent bidirectional connections — enabling real-time server-to-client communication.',
+    explain: `WebSockets upgrade an HTTP connection to a persistent, <strong>bidirectional channel</strong>. Both client and server can send messages at any time without the overhead of new connections — perfect for chat, live scores, and collaborative tools.`,
+    keyPoints: [
+      { icon: '🔄', text: 'Starts as HTTP, upgrades via "101 Switching Protocols"' },
+      { icon: '↔', text: 'Bidirectional: server can push without client polling' },
+      { icon: '⚡', text: 'Low overhead: no new connection per message' },
+      { icon: '⚠', text: 'Stateful connections make horizontal scaling harder' },
+    ],
+    useCases: ['Chat apps', 'Live sports scores', 'Collaborative editors', 'Real-time dashboards', 'Online gaming'],
+    quiz: {
+      q: 'How does a WebSocket connection begin?',
+      opts: ['A special WebSocket-only protocol from the start', 'An HTTP request that upgrades to a persistent connection', 'UDP packets with special headers', 'A direct TCP connection without HTTP'],
+      correct: 1,
+      feedback: '✓ WebSocket starts as HTTP, then the server responds with "101 Switching Protocols" to upgrade to the persistent WebSocket channel. Clever reuse of existing HTTP infrastructure!'
+    },
+    interactive: 'websocket'
+  },
+  {
+    id: 11, group: 2, num: '11',
+    title: 'Webhooks',
+    subtitle: 'Event-driven callbacks — servers notifying your app when something happens.',
+    explain: `Webhooks flip the polling model: instead of your app asking "has anything changed?", the external service <strong>POSTs to your URL</strong> when an event occurs. You register a callback URL; they call you. Used heavily by Stripe, GitHub, Twilio.`,
+    keyPoints: [
+      { icon: '🔔', text: 'Register a URL; receive POST when events occur' },
+      { icon: '⚡', text: 'Event-driven: eliminates wasteful polling' },
+      { icon: '🔄', text: 'Include retry logic — your server may be temporarily down' },
+      { icon: '🔑', text: 'Verify signatures (HMAC) to ensure authenticity' },
+    ],
+    useCases: ['Stripe payment events', 'GitHub push events', 'Twilio SMS delivery', 'Shopify order notifications'],
+    quiz: {
+      q: 'What is the main advantage of webhooks over polling?',
+      opts: ['Webhooks are more secure', 'Instant notification without wasted repeated requests', 'Webhooks work over UDP', 'Polling has too many latency issues'],
+      correct: 1,
+      feedback: '✓ Polling wastes resources checking repeatedly. Webhooks are push-based — you\'re notified instantly when something happens, with no wasted requests in between.'
+    },
+    interactive: 'webhook'
+  },
+  // Group 3
+  {
+    id: 12, group: 3, num: '12',
+    title: 'Databases',
+    subtitle: 'Organized data storage — choosing the right engine for your data model and access patterns.',
+    explain: `Different problems need different database types. <strong>Relational</strong> (PostgreSQL): structured, consistent, joins. <strong>Document</strong> (MongoDB): flexible JSON. <strong>Key-Value</strong> (Redis): blazing fast lookups. <strong>Graph</strong> (Neo4j): relationship traversal.`,
+    keyPoints: [
+      { icon: '📊', text: 'Relational: tables, schemas, ACID, complex joins' },
+      { icon: '📄', text: 'Document: flexible JSON, good for varied schemas' },
+      { icon: '⚡', text: 'Key-Value: hash map speed, ideal for caching/sessions' },
+      { icon: '🕸', text: 'Graph: models relationships as first-class — social networks' },
+    ],
+    useCases: ['Choose based on: data model, query patterns, consistency needs, scale'],
+    quiz: {
+      q: 'For a social network\'s friend recommendations, which database type fits best?',
+      opts: ['Relational (PostgreSQL)', 'Key-Value (Redis)', 'Graph (Neo4j)', 'Column (Cassandra)'],
+      correct: 2,
+      feedback: '✓ Graph databases model relationships natively. "Friend of friend within 3 hops" is trivial in Neo4j but requires expensive recursive joins in relational databases.'
+    },
+    interactive: 'databases'
+  },
+  {
+    id: 13, group: 3, num: '13',
+    title: 'SQL vs NoSQL',
+    subtitle: 'Schema rigidity and ACID transactions vs flexibility and horizontal scale.',
+    explain: `<strong>SQL</strong>: strict schema, ACID transactions, complex joins, vertical scale. <strong>NoSQL</strong>: flexible schema, eventual consistency, horizontal scale. Most production systems use both — PostgreSQL for transactions, MongoDB or Redis for flexibility/speed.`,
+    keyPoints: [
+      { icon: '✅', text: 'SQL: banking, inventory, anything needing ACID guarantees' },
+      { icon: '📈', text: 'NoSQL: social media, logs, catalogs — high write throughput' },
+      { icon: '🔗', text: 'SQL joins are powerful; NoSQL denormalizes to avoid them' },
+      { icon: '⚖', text: 'Most systems use polyglot persistence — both SQL and NoSQL' },
+    ],
+    useCases: ['Use SQL for: orders, accounts, inventory. NoSQL for: sessions, catalogs, logs'],
+    quiz: {
+      q: 'An e-commerce app needs to process payments. SQL or NoSQL?',
+      opts: ['NoSQL — it scales better', 'SQL — ACID guarantees prevent double-charges', 'Either works equally', 'NoSQL — faster for financial data'],
+      correct: 1,
+      feedback: '✓ Payment processing NEEDS ACID transactions. You can\'t have money debited twice or a payment succeeding on one node but not another. SQL\'s consistency guarantees are non-negotiable here.'
+    },
+    interactive: 'sqlnosql'
+  },
+  {
+    id: 14, group: 3, num: '14',
+    title: 'Database Indexing',
+    subtitle: 'The B-tree data structure that turns O(n) table scans into O(log n) lookups.',
+    explain: `Without an index, finding a row requires scanning every row — O(n). An index (usually a <strong>B-tree</strong>) creates a sorted structure enabling O(log n) lookups. Trade-off: indexes speed reads but slow writes (every INSERT/UPDATE must update the index too).`,
+    keyPoints: [
+      { icon: '📚', text: 'Index = sorted data structure mapping values to row locations' },
+      { icon: '🌲', text: 'B-tree: balanced tree, O(log n) lookups, range queries' },
+      { icon: '✍', text: 'Indexes slow writes — every INSERT updates all indexes' },
+      { icon: '🎯', text: 'Index WHERE and JOIN columns; avoid indexing everything' },
+    ],
+    useCases: ['Email lookups', 'Date range queries', 'Foreign key joins', 'Full-text search'],
+    quiz: {
+      q: 'You have 100M user rows. An unindexed email lookup takes 10 seconds. How does an index help?',
+      opts: ['Stores data in memory permanently', 'Reduces scan to O(log n) — from millions of rows to ~27 comparisons', 'Splits the table automatically', 'Caches the result forever'],
+      correct: 1,
+      feedback: '✓ log₂(100M) ≈ 27. A B-tree index reduces 100 million comparisons to about 27! That\'s the magic of O(log n) — from seconds to milliseconds.'
+    },
+    interactive: 'indexing'
+  },
+  {
+    id: 15, group: 3, num: '15',
+    title: 'Vertical Partitioning',
+    subtitle: 'Splitting wide tables into narrower ones by access pattern to reduce I/O.',
+    explain: `When tables have many columns, <strong>vertical partitioning</strong> splits them by access pattern. Profile data (name, avatar) stays together; billing data (card, address) is separate. Queries only read the columns they need — less I/O, better performance.`,
+    keyPoints: [
+      { icon: '✂', text: 'Split one wide table into multiple narrow tables by use case' },
+      { icon: '⚡', text: 'Queries touch fewer columns = less disk I/O' },
+      { icon: '🔒', text: 'Security: billing data can have stricter access controls' },
+      { icon: '🔑', text: 'Tables joined by shared primary key' },
+    ],
+    useCases: ['Separating profile, auth, and billing data', 'Isolating sensitive columns', 'Different storage engines per partition'],
+    quiz: {
+      q: 'A users table has 40 columns (profile, auth, billing, preferences). Why vertically partition it?',
+      opts: ['To increase write speed', 'Profile queries only need 5 columns — scanning 40 wastes I/O', 'To enable more joins', 'NoSQL does this automatically'],
+      correct: 1,
+      feedback: '✓ If your profile page only needs name, email, avatar — why read billing_address and card_number too? Partitioning means each query reads only its relevant columns from disk.'
+    },
+    interactive: 'vpartition'
+  },
+  {
+    id: 16, group: 3, num: '16',
+    title: 'Caching',
+    subtitle: 'Store hot data in memory to eliminate expensive database round-trips.',
+    explain: `Caching stores frequently accessed data in a fast in-memory layer (Redis, Memcached). The <strong>cache-aside pattern</strong>: check cache → hit (return fast) or miss (query DB → store in cache → return). Key challenge: cache invalidation when data changes.`,
+    keyPoints: [
+      { icon: '⚡', text: 'Memory access: ~100ns. Disk access: ~10ms. 100,000x faster.' },
+      { icon: '🔄', text: 'Cache-aside (lazy loading): most flexible invalidation strategy' },
+      { icon: '⏱', text: 'TTL: data auto-expires; prevents stale cache buildup' },
+      { icon: '⚠', text: '"Cache invalidation is one of the hardest problems in CS"' },
+    ],
+    useCases: ['Session storage', 'API response caching', 'Database query results', 'Computed aggregations'],
+    quiz: {
+      q: 'What is a "cache miss"?',
+      opts: ['Cache server crashes', 'Requested data not in cache — must query the database', 'Cache returns wrong data', 'Too many cache keys'],
+      correct: 1,
+      feedback: '✓ A cache miss means the data isn\'t in the cache — you fall through to the database. The data is then stored in cache for future requests. High miss rates defeat the purpose of caching!'
+    },
+    interactive: 'caching'
+  },
+  {
+    id: 17, group: 3, num: '17',
+    title: 'Denormalization',
+    subtitle: 'Trading storage redundancy for faster reads by reducing expensive multi-table joins.',
+    explain: `Normalization reduces duplication across tables but requires joins. <strong>Denormalization</strong> deliberately duplicates data (e.g., storing user_name in orders) to eliminate join operations. Use when read performance matters more than storage efficiency.`,
+    keyPoints: [
+      { icon: '⚡', text: 'Eliminates multi-table JOINs — single read gets all data' },
+      { icon: '💾', text: 'Trade: storage redundancy for read performance' },
+      { icon: '🔄', text: 'Must update data in multiple places on write' },
+      { icon: '📊', text: 'Natural in NoSQL databases that don\'t support joins' },
+    ],
+    useCases: ['Order history display', 'User feed items', 'NoSQL document design', 'Read-heavy analytics'],
+    quiz: {
+      q: 'After denormalizing, you store user_name in every order. The user changes their name. What happens?',
+      opts: ['Nothing, old orders keep old name', 'All order records need to be updated', 'The database handles it automatically', 'Old orders are deleted'],
+      correct: 1,
+      feedback: '✓ This is the core trade-off: denormalization means YOU must keep redundant copies in sync. Many systems accept this (orders often want the name at time of order anyway).'
+    },
+    interactive: 'denorm'
+  },
+  {
+    id: 18, group: 3, num: '18',
+    title: 'Blob Storage',
+    subtitle: 'Specialized object storage for images, videos, and large files — not rows and columns.',
+    explain: `Binary Large Objects (blobs) — images, videos, PDFs — don't belong in databases. <strong>Blob stores</strong> (Amazon S3) store them cheaply and durably. Pattern: upload file → get URL → store URL in database → serve via CDN.`,
+    keyPoints: [
+      { icon: '☁', text: 'Store URL in DB, not the file — keeps DB lean' },
+      { icon: '🏆', text: 'S3: 99.999999999% durability (11 nines) — virtually never loses data' },
+      { icon: '🌍', text: 'Built-in CDN integration for fast global delivery' },
+      { icon: '💰', text: 'Costs pennies per GB — far cheaper than database storage' },
+    ],
+    useCases: ['User profile photos', 'Video uploads', 'Document storage', 'Backups', 'Static assets'],
+    quiz: {
+      q: 'What should you store in your database when a user uploads a profile photo?',
+      opts: ['The raw image bytes as a BLOB column', 'Nothing — only in S3', 'The URL pointing to the image in S3', 'A base64 encoded string'],
+      correct: 2,
+      feedback: '✓ Store the URL string in your DB, the actual file in S3. Databases are terrible at serving large binaries; S3 is purpose-built for it with CDN, replication, and cost efficiency.'
+    },
+    interactive: 'blob'
+  },
+  // Group 4
+  {
+    id: 19, group: 4, num: '19',
+    title: 'Vertical Scaling',
+    subtitle: 'Get a bigger machine — simple but with a hard ceiling.',
+    explain: `<strong>Vertical scaling (scale up)</strong>: replace your server with a more powerful one — more CPU, RAM, faster storage. No code changes needed. Simple but limited: the largest machines cost exponentially more and there's a single point of failure.`,
+    keyPoints: [
+      { icon: '⬆', text: 'More CPU, RAM, storage on one machine — no code changes' },
+      { icon: '✅', text: 'Simple: works great for startups and medium traffic' },
+      { icon: '🚫', text: 'Hard ceiling: largest instance types have limits' },
+      { icon: '⚠', text: 'Single point of failure: one machine goes down → everything down' },
+    ],
+    useCases: ['Databases (often vertical first)', 'Early-stage startups', 'Dev environments', 'Before needing distribution'],
+    quiz: {
+      q: 'Why can\'t you just keep vertically scaling forever?',
+      opts: ['Software doesn\'t support it', 'Hardware limits exist — largest machines cap out, costs explode disproportionately', 'Vertical scaling only works for databases', 'The cloud doesn\'t offer large instances'],
+      correct: 1,
+      feedback: '✓ There\'s a hard hardware ceiling. The largest AWS instances have ~448 vCPUs and ~24TB RAM — beyond that, you can\'t buy bigger. Plus costs grow disproportionately and you have a single failure point.'
+    },
+    interactive: 'vscale'
+  },
+  {
+    id: 20, group: 4, num: '20',
+    title: 'Horizontal Scaling',
+    subtitle: 'Add more servers — the way every large-scale system handles growth.',
+    explain: `<strong>Horizontal scaling (scale out)</strong>: add more servers and distribute load across them. Theoretically unlimited. Requires: stateless application design, a load balancer, and session storage in Redis (not server memory).`,
+    keyPoints: [
+      { icon: '➕', text: 'Add more servers — no theoretical upper limit' },
+      { icon: '🔄', text: 'Servers MUST be stateless — any server handles any request' },
+      { icon: '📊', text: 'Sessions/state live in Redis, not server memory' },
+      { icon: '⚡', text: 'Google, Netflix, Amazon all run thousands of horizontal servers' },
+    ],
+    useCases: ['Web application servers', 'API gateways', 'Worker pools', 'Stateless microservices'],
+    quiz: {
+      q: 'For horizontal scaling to work, application servers must be ___.',
+      opts: ['More powerful', 'Stateless — any server can handle any request', 'On the same network', 'Running the same OS'],
+      correct: 1,
+      feedback: '✓ Stateless is the key requirement! If server A handles login and stores session data locally, then request 2 going to server B won\'t find the session. Put state in Redis or a DB.'
+    },
+    interactive: 'hscale'
+  },
+  {
+    id: 21, group: 4, num: '21',
+    title: 'Load Balancers',
+    subtitle: 'Traffic distributors — ensuring no single server drowns while others idle.',
+    explain: `A load balancer distributes requests across servers using algorithms: <strong>Round Robin</strong> (sequential), <strong>Least Connections</strong> (to least busy), <strong>Weighted</strong> (by capacity). Also runs health checks — stops sending to failed servers automatically.`,
+    keyPoints: [
+      { icon: '⚖', text: 'Round Robin: sequential distribution — simple and even' },
+      { icon: '📊', text: 'Least Connections: sends to the least busy server' },
+      { icon: '❤', text: 'Health checks: removes failed servers from rotation' },
+      { icon: '🔒', text: 'SSL termination: decrypts HTTPS before forwarding' },
+    ],
+    useCases: ['AWS ALB/NLB', 'Nginx', 'HAProxy', 'Cloudflare', 'Layer 4 and Layer 7 balancing'],
+    quiz: {
+      q: 'Server A handles 100 connections, Server B handles 10. With "Least Connections", next request goes to?',
+      opts: ['Server A (it has more capacity)', 'Server B (it has fewer active connections)', 'Both equally', 'Random selection'],
+      correct: 1,
+      feedback: '✓ Least Connections sends to the least busy server — Server B with 10 connections. This avoids overloading slow servers that are stuck on long-running requests.'
+    },
+    interactive: 'loadbalancer'
+  },
+  {
+    id: 22, group: 4, num: '22',
+    title: 'Replication',
+    subtitle: 'Copy your database across multiple nodes — read from replicas, write to primary.',
+    explain: `<strong>Replication</strong> copies data to multiple database servers. Primary-replica pattern: all writes to primary, reads distributed to replicas. Enables horizontal read scaling. Trade-off: replication lag means replicas might have slightly stale data.`,
+    keyPoints: [
+      { icon: '📋', text: 'Primary: handles all writes; replicas: handle reads' },
+      { icon: '⚡', text: 'Offload read-heavy traffic (most apps are ~80% reads)' },
+      { icon: '⏱', text: 'Replication lag: replicas may be milliseconds behind' },
+      { icon: '🔄', text: 'Failover: replica promoted to primary if primary dies' },
+    ],
+    useCases: ['Read-heavy applications', 'Analytics queries', 'High availability', 'Geographic replication'],
+    quiz: {
+      q: 'Should you read account balance from primary or replica?',
+      opts: ['Replica — it\'s faster', 'Primary — avoid stale data risk', 'Either is fine', 'Depends on network proximity'],
+      correct: 1,
+      feedback: '✓ For financial data, always read from primary! Replication lag means a replica might be 100ms behind. A user could withdraw money and see the old balance on a replica — catastrophic.'
+    },
+    interactive: 'replication'
+  },
+  {
+    id: 23, group: 4, num: '23',
+    title: 'Sharding',
+    subtitle: 'Split your data horizontally across multiple nodes — distribute writes and storage.',
+    explain: `<strong>Sharding</strong> partitions data across multiple database nodes — each node owns a subset. Unlike replication (every node has all data), sharding splits the data. A shard key determines which node owns which records.`,
+    keyPoints: [
+      { icon: '✂', text: 'Each shard holds a subset — all shards together = full dataset' },
+      { icon: '🔑', text: 'Shard key choice is CRITICAL — bad key = hot shard imbalance' },
+      { icon: '⚠', text: 'Cross-shard queries are expensive — design to avoid them' },
+      { icon: '🔄', text: 'Resharding (adding nodes) requires data migration' },
+    ],
+    useCases: ['Instagram (user_id sharding)', 'Twitter (tweet_id sharding)', 'DynamoDB (partition keys)', 'Cassandra'],
+    quiz: {
+      q: 'You shard by user_id. A "celebrity" user has 10M followers — all their data goes to one shard. Problem?',
+      opts: ['Not a problem — more data on one shard is fine', 'Hot shard — that one node gets disproportionate load', 'Sharding should be by date instead', 'The celebrity needs a separate database'],
+      correct: 1,
+      feedback: '✓ This is the "celebrity problem" or hot shard! If user_id 1 (Elon Musk) has 100M followers and all their data is on shard 1, that shard gets hammered while others idle.'
+    },
+    interactive: 'sharding'
+  },
+  // Group 5
+  {
+    id: 24, group: 5, num: '24',
+    title: 'CAP Theorem',
+    subtitle: 'In distributed systems: Consistency, Availability, Partition Tolerance — pick two.',
+    explain: `CAP theorem: a distributed system can only guarantee 2 of 3: <strong>Consistency</strong> (latest data), <strong>Availability</strong> (always responds), <strong>Partition Tolerance</strong> (works if network splits). Since partitions are inevitable, the real choice is <strong>CP</strong> vs <strong>AP</strong>.`,
+    keyPoints: [
+      { icon: '🔱', text: 'Network partitions are inevitable — P is not optional' },
+      { icon: '🏦', text: 'CP (MongoDB, Redis): consistent data, may reject requests during partition' },
+      { icon: '📱', text: 'AP (Cassandra, DynamoDB): always available, may return stale data' },
+      { icon: '⚖', text: 'PACELC extends CAP with latency vs consistency trade-off' },
+    ],
+    useCases: ['CP for: banking, inventory, account balances. AP for: social feeds, product catalogs, analytics'],
+    quiz: {
+      q: 'During a network partition, a CP system will:',
+      opts: ['Return potentially stale data to stay available', 'Refuse requests it cannot guarantee are consistent', 'Split into two independent systems', 'Pause and wait for the partition to heal'],
+      correct: 1,
+      feedback: '✓ CP (Consistency + Partition tolerance) means: "I\'d rather say no than lie to you." The system refuses requests it can\'t handle consistently. Banks choose this — better an error than a wrong balance.'
+    },
+    interactive: 'cap'
+  },
+  {
+    id: 25, group: 5, num: '25',
+    title: 'CDN',
+    subtitle: 'A global network of edge servers that cache your content close to users.',
+    explain: `A CDN (Content Delivery Network) places servers at hundreds of global edge locations. Static assets (images, CSS, JS) are cached on the nearest edge. First request in a region is a cache miss (goes to origin); subsequent requests are served from the edge — orders of magnitude faster.`,
+    keyPoints: [
+      { icon: '🌍', text: 'Edge nodes serve content from the nearest geographic location' },
+      { icon: '⚡', text: 'Cache hit: London user gets content from London edge, not Virginia' },
+      { icon: '🛡', text: 'Absorbs DDoS traffic before it reaches your origin' },
+      { icon: '📊', text: 'Reduces origin server load by 80-95% for static assets' },
+    ],
+    useCases: ['CloudFront (AWS)', 'Cloudflare', 'Akamai', 'Fastly — for images, video, JS/CSS, fonts'],
+    quiz: {
+      q: 'The first user in Tokyo requests your US-hosted image. What happens?',
+      opts: ['Served from Tokyo CDN edge instantly', 'Cache miss — fetched from US origin, cached at Tokyo edge for next user', 'DNS routes them to a faster server', 'The image is duplicated to Japan automatically'],
+      correct: 1,
+      feedback: '✓ First request = cache miss → goes to origin. But it\'s now cached at the Tokyo edge. The second Tokyo user gets it at ~5ms instead of ~200ms to the US. This is CDN\'s warm-up effect.'
+    },
+    interactive: 'cdn'
+  },
+  {
+    id: 26, group: 5, num: '26',
+    title: 'Idempotency',
+    subtitle: 'Safe to retry — the same operation executed multiple times produces the same result.',
+    explain: `In distributed systems, requests can fail mid-flight. Did the server process it? You don't know. <strong>Idempotency keys</strong> let you safely retry: the server stores that key after processing — if it sees the same key again, it returns the cached result instead of reprocessing.`,
+    keyPoints: [
+      { icon: '🔑', text: 'Idempotency key: unique UUID sent with requests that can\'t be duplicated' },
+      { icon: '✅', text: 'GET, DELETE: naturally idempotent. POST: needs idempotency keys' },
+      { icon: '💳', text: 'Stripe, PayPal require idempotency keys for payment APIs' },
+      { icon: '⚡', text: 'Server deduplicates: "I\'ve seen key abc-123, returning cached result"' },
+    ],
+    useCases: ['Payment processing', 'Order creation', 'Email sending', 'Any non-idempotent distributed operation'],
+    quiz: {
+      q: 'You POST a payment of $50. Network times out. Should you retry?',
+      opts: ['No — the server might charge twice', 'Yes, with the same idempotency key — server deduplicates', 'Yes, with a new idempotency key to be safe', 'Never retry POST requests'],
+      correct: 1,
+      feedback: '✓ Retry with the SAME idempotency key! The server checks if it already processed that key. If yes → returns cached success (no double charge). If no → processes for the first time. Safe!'
+    },
+    interactive: 'idempotency'
+  },
+  // Group 6
+  {
+    id: 27, group: 6, num: '27',
+    title: 'Microservices',
+    subtitle: 'Decompose your monolith into small, independent services — each owning its domain.',
+    explain: `Microservices split a monolith into small, independently deployable services. Each service owns its data, can be scaled independently, and is developed by a small team. Trade-off: distributed systems complexity (network calls, data consistency, operational overhead).`,
+    keyPoints: [
+      { icon: '🔧', text: 'Each service owns one business capability + its database' },
+      { icon: '🚀', text: 'Deploy, scale, and update services independently' },
+      { icon: '⚠', text: 'Network calls replace function calls — latency and failure modes' },
+      { icon: '📊', text: 'Monolith first is often correct — avoid premature decomposition' },
+    ],
+    useCases: ['Netflix (700+ microservices)', 'Amazon', 'Uber', 'Spotify — each owns a bounded domain'],
+    quiz: {
+      q: 'The biggest operational challenge of microservices vs monolith is:',
+      opts: ['They\'re slower to develop', 'Distributed systems complexity: observability, data consistency, network failures', 'You need more developers', 'Databases become too large'],
+      correct: 1,
+      feedback: '✓ Microservices trade code complexity for operational complexity. What was a function call is now a network request that can fail. You need service discovery, distributed tracing, circuit breakers...'
+    },
+    interactive: 'microservices'
+  },
+  {
+    id: 28, group: 6, num: '28',
+    title: 'Message Queues',
+    subtitle: 'Decouple services asynchronously — producers send, consumers process at their own pace.',
+    explain: `Message queues decouple services. The Order Service doesn't wait for Email, Inventory, and Analytics to respond — it drops a message on the queue and continues. Each consumer processes asynchronously. Queue buffers traffic spikes; messages persist even if consumers are down.`,
+    keyPoints: [
+      { icon: '🔌', text: 'Decoupling: services don\'t know about each other, only the queue' },
+      { icon: '📦', text: 'Buffering: absorbs traffic spikes — consumers process at their pace' },
+      { icon: '✅', text: 'Reliability: messages persist even if consumer crashes' },
+      { icon: '⚡', text: 'Kafka (streaming), RabbitMQ (traditional), SQS (managed AWS)' },
+    ],
+    useCases: ['Order processing', 'Email notifications', 'Video transcoding', 'Log aggregation', 'Event sourcing'],
+    quiz: {
+      q: 'If your email service is down for 5 minutes, messages in a queue will:',
+      opts: ['Be lost — the producer needs to retry', 'Wait in the queue and be processed when email service recovers', 'Cause the order service to fail too', 'Be discarded after TTL'],
+      correct: 1,
+      feedback: '✓ This is queue\'s superpower — durability + decoupling. The email service recovers, processes the backlog, no messages lost. The order service never knew there was a problem!'
+    },
+    interactive: 'messagequeue'
+  },
+  {
+    id: 29, group: 6, num: '29',
+    title: 'Rate Limiting',
+    subtitle: 'Protect your API from abuse — control how many requests a client can make per time window.',
+    explain: `Rate limiting controls requests per time window. Common algorithms: <strong>Token Bucket</strong> (refills at fixed rate), <strong>Sliding Window</strong> (rolling count), <strong>Fixed Window</strong> (discrete intervals). Returns 429 Too Many Requests when exceeded. Implemented at API gateway level with Redis.`,
+    keyPoints: [
+      { icon: '🪣', text: 'Token Bucket: each request costs a token; tokens refill over time' },
+      { icon: '🔢', text: 'Returns 429 Too Many Requests with Retry-After header' },
+      { icon: '🛡', text: 'Prevents DDoS, scraping, and single-tenant abuse' },
+      { icon: '💰', text: 'Enforces tiered pricing: free=100/min, paid=10,000/min' },
+    ],
+    useCases: ['API gateways', 'Login attempts', 'SMS sending', 'Search endpoints', 'Payment retries'],
+    quiz: {
+      q: 'The Token Bucket algorithm allows "bursting". What does this mean?',
+      opts: ['All requests are rejected suddenly', 'Unused tokens accumulate — you can temporarily exceed the average rate', 'Rate limits increase over time', 'Tokens are shared across users'],
+      correct: 1,
+      feedback: '✓ Token Bucket allows bursting! If your limit is 10/min but you only sent 5 last minute, you have 5 tokens banked. You can burst to 15 this minute. Good for bursty traffic patterns.'
+    },
+    interactive: 'ratelimit'
+  },
+  {
+    id: 30, group: 6, num: '30',
+    title: 'API Gateway',
+    subtitle: 'The single front door for all your microservices — routing, auth, rate limiting in one place.',
+    explain: `An API Gateway is the single entry point for all client requests. It handles cross-cutting concerns — <strong>authentication</strong>, <strong>rate limiting</strong>, <strong>routing</strong>, <strong>SSL termination</strong>, and <strong>response aggregation</strong> — so every microservice doesn't implement these independently.`,
+    keyPoints: [
+      { icon: '🚪', text: 'Single entry point: clients know one URL, not 20 service addresses' },
+      { icon: '🔑', text: 'Centralized auth: validate JWT once, forward to services' },
+      { icon: '🔄', text: 'Response aggregation: combine multiple service responses' },
+      { icon: '⚡', text: 'Kong, AWS API Gateway, Nginx, Envoy, Traefik' },
+    ],
+    useCases: ['Microservice architectures', 'Mobile backends', 'Third-party API exposure', 'Protocol translation'],
+    quiz: {
+      q: 'Without an API Gateway, what does every microservice need to implement?',
+      opts: ['Its own database', 'Auth, rate limiting, logging, and SSL independently — massive duplication', 'Load balancing internally', 'Its own DNS resolution'],
+      correct: 1,
+      feedback: '✓ This is the gateway\'s core value: centralize cross-cutting concerns. Without it, every service reimplements authentication, rate limiting, logging — violating DRY and creating inconsistency.'
+    },
+    interactive: 'apigateway'
+  },
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────
+let currentConcept = null;
+let doneConcepts = new Set(JSON.parse(localStorage.getItem('done') || '[]'));
+
+// ─── BUILD SIDEBAR ───────────────────────────────────────────────────────
+function buildSidebar() {
+  const nav = document.getElementById('sidebar-nav');
+  const miniMap = document.getElementById('mini-map');
+  nav.innerHTML = '';
+  miniMap.innerHTML = '';
+
+  GROUPS.forEach(g => {
+    const section = document.createElement('div');
+    section.className = 'group-section';
+    
+    const header = document.createElement('div');
+    header.className = 'group-header';
+    header.innerHTML = `<span class="group-dot" style="background:${g.color}"></span>${g.name}`;
+    section.appendChild(header);
+
+    const groupConcepts = CONCEPTS.filter(c => c.group === g.id);
+    groupConcepts.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = `concept-btn${doneConcepts.has(c.id) ? ' done' : ''}`;
+      btn.dataset.id = c.id;
+      btn.innerHTML = `
+        <span class="concept-num">${c.num}</span>
+        ${c.title}
+        ${doneConcepts.has(c.id) ? '<span class="check">✓</span>' : ''}
+      `;
+      btn.onclick = () => showConcept(c.id);
+      section.appendChild(btn);
+    });
+    nav.appendChild(section);
+  });
+
+  CONCEPTS.forEach(c => {
+    const dot = document.createElement('div');
+    dot.className = `mini-dot${doneConcepts.has(c.id) ? ' done' : ''}${currentConcept === c.id ? ' active' : ''}`;
+    dot.title = c.title;
+    dot.onclick = () => showConcept(c.id);
+    miniMap.appendChild(dot);
+  });
+}
+
+// ─── BUILD GROUPS GRID ───────────────────────────────────────────────────
+function buildGroupsGrid() {
+  const grid = document.getElementById('groups-grid');
+  grid.innerHTML = '';
+  GROUPS.forEach(g => {
+    const concepts = CONCEPTS.filter(c => c.group === g.id);
+    const doneCount = concepts.filter(c => doneConcepts.has(c.id)).length;
+    const card = document.createElement('div');
+    card.className = 'group-card';
+    card.style.cssText = `--gc:${g.color};--gcbg:${g.bg}`;
+    card.innerHTML = `
+      <style>.group-card:hover { background: ${g.bg}; } </style>
+      <div style="width:100%;height:3px;background:${g.color};border-radius:3px;margin-bottom:16px;opacity:0.7"></div>
+      <div class="gc-num">Group ${g.num}</div>
+      <div class="gc-title" style="color:${g.color}">${g.name}</div>
+      <div class="gc-desc">Concepts ${concepts[0].num}–${concepts[concepts.length-1].num}: ${concepts.slice(0,3).map(c=>c.title).join(', ')}${concepts.length > 3 ? '...' : ''}</div>
+      <div class="gc-count">
+        <div style="flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+          <div style="height:100%;background:${g.color};width:${(doneCount/concepts.length)*100}%;transition:width 0.5s"></div>
+        </div>
+        ${doneCount}/${concepts.length} done
+      </div>
+    `;
+    card.onclick = () => showConcept(concepts[0].id);
+    grid.appendChild(card);
+  });
+}
+
+// ─── SHOW CONCEPT ────────────────────────────────────────────────────────
+function showConcept(id) {
+  const concept = CONCEPTS.find(c => c.id === id);
+  if (!concept) return;
+
+  currentConcept = id;
+  document.getElementById('home-view').className = 'home-view';
+  if (window._mobileCloseOnNav) window._mobileCloseOnNav();
+  
+  let view = document.getElementById(`concept-${id}`);
+  if (!view) {
+    view = buildConceptView(concept);
+    document.getElementById('concept-views').appendChild(view);
+    setTimeout(() => initInteractive(concept), 100);
+  }
+
+  document.querySelectorAll('.concept-view').forEach(v => v.className = 'concept-view');
+  view.className = 'concept-view active';
+
+  document.querySelectorAll('.concept-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.id) === id);
+  });
+
+  updateProgress();
+  buildSidebar();
+  window.scrollTo(0, 0);
+}
+
+function showHome() {
+  currentConcept = null;
+  document.getElementById('home-view').className = 'home-view active';
+  document.querySelectorAll('.concept-view').forEach(v => v.className = 'concept-view');
+  document.querySelectorAll('.concept-btn').forEach(b => b.classList.remove('active'));
+  buildGroupsGrid();
+  updateProgress();
+}
+
+// ─── BUILD CONCEPT VIEW ──────────────────────────────────────────────────
+function buildConceptView(c) {
+  const group = GROUPS.find(g => g.id === c.group);
+  const view = document.createElement('div');
+  view.id = `concept-${c.id}`;
+  view.className = 'concept-view';
+
+  const isDone = doneConcepts.has(c.id);
+  const prev = CONCEPTS.find(x => x.id === c.id - 1);
+  const next = CONCEPTS.find(x => x.id === c.id + 1);
+
+  view.innerHTML = `
+    <div class="concept-header">
+      <button onclick="showHome()" style="background:none;border:none;color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;gap:6px">
+        ← Back to overview
+      </button>
+      <div class="concept-group-tag" style="background:${group.bg};color:${group.color}">
+        ${group.name}
+      </div>
+      <div class="concept-title">${c.title}</div>
+      <div class="concept-subtitle">${c.subtitle}</div>
+    </div>
+
+    <div class="concept-body">
+      <!-- Explanation -->
+      <p style="font-size:15px;line-height:1.8;color:var(--text);margin-bottom:24px">${c.explain}</p>
+
+      <!-- Interactive -->
+      <div class="diagram-container" id="interactive-${c.id}">
+        <div style="color:var(--muted);font-size:13px">Loading interactive diagram...</div>
+      </div>
+
+      <!-- Key Points -->
+      <div class="key-points">
+        <div class="key-points-header">Key Takeaways</div>
+        ${c.keyPoints.map(kp => `
+          <div class="key-point">
+            <div class="key-point-icon" style="background:${group.bg};color:${group.color}">${kp.icon}</div>
+            <div>${kp.text}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Use Cases -->
+      <div style="margin-top:20px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px">Real World Usage</div>
+        <div>${c.useCases.map(u => `<span class="chip" style="background:${group.bg};color:${group.color}">${u}</span>`).join('')}</div>
+      </div>
+
+      <!-- Quiz -->
+      <div class="quiz-box" id="quiz-${c.id}">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:${group.color};margin-bottom:16px">⚡ Quick Check</div>
+        <div class="quiz-question">${c.quiz.q}</div>
+        <div class="quiz-options">
+          ${c.quiz.opts.map((o, i) => `
+            <button class="quiz-option" onclick="answerQuiz(${c.id},${i},${c.quiz.correct},'${c.id}-${i}')">
+              <span class="quiz-letter">${'ABCD'[i]}</span>
+              ${o}
+            </button>
+          `).join('')}
+        </div>
+        <div class="quiz-feedback" id="quiz-feedback-${c.id}"></div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <div class="concept-nav">
+      <button class="nav-btn" onclick="${prev ? `showConcept(${prev.id})` : 'showHome()'}" >
+        ← ${prev ? prev.title : 'Overview'}
+      </button>
+      <button class="nav-mark-done${isDone ? ' done' : ''}" id="done-btn-${c.id}" onclick="markDone(${c.id})">
+        ${isDone ? '✓ Mastered!' : 'Mark as Done →'}
+      </button>
+      <button class="nav-btn" onclick="${next ? `showConcept(${next.id})` : 'showHome()'}" ${!next ? '' : ''}>
+        ${next ? next.title : 'Overview'} →
+      </button>
+    </div>
+  `;
+  return view;
+}
+
+// ─── QUIZ ────────────────────────────────────────────────────────────────
+function answerQuiz(conceptId, chosen, correct, btnId) {
+  const opts = document.querySelectorAll(`#quiz-${conceptId} .quiz-option`);
+  const feedback = document.getElementById(`quiz-feedback-${conceptId}`);
+  const concept = CONCEPTS.find(c => c.id === conceptId);
+  
+  opts.forEach((o, i) => {
+    o.style.pointerEvents = 'none';
+    if (i === correct) o.classList.add('correct');
+    else if (i === chosen) o.classList.add('wrong');
+  });
+
+  feedback.textContent = concept.quiz.feedback;
+  feedback.className = `quiz-feedback ${chosen === correct ? 'correct' : 'wrong'}`;
+
+  if (chosen === correct) setTimeout(() => markDone(conceptId), 800);
+}
+
+// ─── MARK DONE ───────────────────────────────────────────────────────────
+function markDone(id) {
+  doneConcepts.add(id);
+  localStorage.setItem('done', JSON.stringify([...doneConcepts]));
+  
+  const btn = document.getElementById(`done-btn-${id}`);
+  if (btn) { btn.textContent = '✓ Mastered!'; btn.className = 'nav-mark-done done'; }
+  
+  showToast('🎯 Concept mastered! Keep going.');
+  updateProgress();
+  buildSidebar();
+}
+
+function updateProgress() {
+  const done = doneConcepts.size;
+  document.getElementById('progress-pct').textContent = `${done} / 30`;
+  document.getElementById('progress-fill').style.width = `${(done/30)*100}%`;
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── INTERACTIVE DIAGRAMS ────────────────────────────────────────────────
+function initInteractive(concept) {
+  const container = document.getElementById(`interactive-${concept.id}`);
+  if (!container) return;
+
+  const handlers = {
+    clientserver: renderClientServer,
+    ipaddress: renderIPAddress,
+    dns: renderDNS,
+    proxy: renderProxy,
+    latency: renderLatency,
+    http: renderHTTP,
+    api: renderAPI,
+    rest: renderREST,
+    graphql: renderGraphQL,
+    websocket: renderWebSocket,
+    webhook: renderWebhook,
+    databases: renderDatabases,
+    sqlnosql: renderSQLNoSQL,
+    indexing: renderIndexing,
+    vpartition: renderVPartition,
+    caching: renderCaching,
+    denorm: renderDenorm,
+    blob: renderBlob,
+    vscale: renderVScale,
+    hscale: renderHScale,
+    loadbalancer: renderLoadBalancer,
+    replication: renderReplication,
+    sharding: renderSharding,
+    cap: renderCAP,
+    cdn: renderCDN,
+    idempotency: renderIdempotency,
+    microservices: renderMicroservices,
+    messagequeue: renderMessageQueue,
+    ratelimit: renderRateLimit,
+    apigateway: renderAPIGateway,
+  };
+
+  const fn = handlers[concept.interactive];
+  if (fn) fn(container, concept);
+}
+
+// ─── INTERACTIVE RENDERERS ───────────────────────────────────────────────
+
+function renderClientServer(el) {
+  el.innerHTML = `
+    <div class="interactive-title">Interactive Demo</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:0;position:relative;height:200px">
+      <div id="cs-client" style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="width:80px;height:80px;border-radius:16px;background:rgba(124,106,255,0.1);border:1px solid rgba(124,106,255,0.3);display:flex;align-items:center;justify-content:center;font-size:32px">💻</div>
+        <div style="font-size:12px;font-weight:600;color:var(--accent)">Client</div>
+        <div style="font-size:11px;color:var(--muted)">Browser / App</div>
+      </div>
+      <div style="flex:1;position:relative;display:flex;flex-direction:column;gap:24px;align-items:center;justify-content:center;padding:0 20px">
+        <div id="cs-req" style="display:flex;align-items:center;gap:8px;width:100%;opacity:0;transition:opacity 0.3s">
+          <div style="height:2px;flex:1;background:linear-gradient(90deg,var(--accent),transparent)"></div>
+          <div style="font-size:11px;padding:4px 10px;background:rgba(124,106,255,0.15);border-radius:20px;color:var(--accent);white-space:nowrap">GET /api/data →</div>
+        </div>
+        <div id="cs-res" style="display:flex;align-items:center;gap:8px;width:100%;opacity:0;transition:opacity 0.3s">
+          <div style="font-size:11px;padding:4px 10px;background:rgba(106,255,180,0.1);border-radius:20px;color:var(--accent3);white-space:nowrap">← 200 OK {data}</div>
+          <div style="height:2px;flex:1;background:linear-gradient(90deg,transparent,var(--accent3))"></div>
+        </div>
+      </div>
+      <div id="cs-server" style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="width:80px;height:80px;border-radius:16px;background:rgba(106,255,180,0.1);border:1px solid rgba(106,255,180,0.3);display:flex;align-items:center;justify-content:center;font-size:32px">🖥️</div>
+        <div style="font-size:12px;font-weight:600;color:var(--accent3)">Server</div>
+        <div style="font-size:11px;color:var(--muted)">Backend</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:8px">
+      <button class="btn btn-primary btn-sm" onclick="animateClientServer()">Send Request →</button>
+      <span id="cs-status" style="font-size:12px;color:var(--muted);margin-left:12px"></span>
+    </div>
+  `;
+}
+
+window.animateClientServer = function() {
+  const req = document.getElementById('cs-req');
+  const res = document.getElementById('cs-res');
+  const status = document.getElementById('cs-status');
+  const server = document.getElementById('cs-server').querySelector('div');
+  
+  status.textContent = 'Sending request...';
+  req.style.opacity = '1';
+  res.style.opacity = '0';
+  
+  setTimeout(() => {
+    server.style.background = 'rgba(255,184,106,0.2)';
+    server.style.borderColor = 'var(--accent4)';
+    status.textContent = 'Server processing...';
+  }, 600);
+  
+  setTimeout(() => {
+    server.style.background = 'rgba(106,255,180,0.1)';
+    server.style.borderColor = 'rgba(106,255,180,0.3)';
+    res.style.opacity = '1';
+    status.textContent = '✓ Response received!';
+  }, 1200);
+
+  setTimeout(() => { req.style.opacity = '0'; res.style.opacity = '0'; status.textContent = ''; }, 3000);
+};
+
+function renderIPAddress(el) {
+  el.innerHTML = `
+    <div class="interactive-title">IP Address Explorer</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">IPv4 Address</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${[192,168,1,1].map((n,i) => `
+            <input type="number" min="0" max="255" value="${n}" id="ipv4-${i}"
+              oninput="updateIP()"
+              style="width:60px;padding:8px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:14px;text-align:center">
+            ${i<3?'<span style="color:var(--muted);font-size:18px">.</span>':''}
+          `).join('')}
+        </div>
+        <div id="ip-type" style="font-size:12px;color:var(--accent3);margin-top:8px"></div>
+        <div id="ip-binary" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-top:6px;word-break:break-all"></div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">IPv6 Address</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent);background:var(--surface2);padding:12px;border-radius:8px;border:1px solid var(--border)">
+          2001:0db8:85a3::8a2e:0370:7334
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px">128-bit • 340 undecillion addresses</div>
+      </div>
+    </div>
+  `;
+  updateIP();
+}
+
+window.updateIP = function() {
+  const octets = [0,1,2,3].map(i => parseInt(document.getElementById(`ipv4-${i}`)?.value) || 0);
+  const first = octets[0];
+  let type = '';
+  if (first === 10) type = '🏠 Private (Class A)';
+  else if (first === 172 && octets[1] >= 16 && octets[1] <= 31) type = '🏠 Private (Class B)';
+  else if (first === 192 && octets[1] === 168) type = '🏠 Private (Class C)';
+  else if (first === 127) type = '🔄 Loopback';
+  else type = '🌐 Public IP';
+  
+  const el = document.getElementById('ip-type');
+  const bin = document.getElementById('ip-binary');
+  if (el) el.textContent = type;
+  if (bin) bin.textContent = octets.map(o => o.toString(2).padStart(8,'0')).join('.');
+};
+
+function renderDNS(el) {
+  const steps = [
+    { label: 'Browser Cache', desc: 'Check local cache first', color: '#7c6aff' },
+    { label: 'OS Resolver', desc: 'Check /etc/hosts + OS cache', color: '#9c6aff' },
+    { label: 'ISP Resolver', desc: 'Ask your ISP\'s DNS server', color: '#ff6a6a' },
+    { label: 'Root Server', desc: 'Who handles .com?', color: '#ffb86a' },
+    { label: 'TLD Server', desc: '.com says: ask NS for google.com', color: '#6affb4' },
+    { label: 'Auth Server', desc: '142.250.80.46 ✓', color: '#6ac8ff' },
+  ];
+  
+  let step = -1;
+  
+  el.innerHTML = `
+    <div class="interactive-title">DNS Resolution Steps</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
+      ${steps.map((s,i) => `
+        <div id="dns-step-${i}" style="display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0.3;transition:all 0.3s;flex:1;min-width:80px">
+          <div style="width:36px;height:36px;border-radius:50%;background:${s.color}22;border:1px solid ${s.color}44;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${s.color}">${i+1}</div>
+          <div style="font-size:11px;font-weight:600;text-align:center;color:${s.color}">${s.label}</div>
+          <div style="font-size:10px;color:var(--muted);text-align:center">${s.desc}</div>
+        </div>
+        ${i < steps.length-1 ? `<div style="font-size:16px;color:var(--muted);flex-shrink:0">→</div>` : ''}
+      `).join('')}
+    </div>
+    <div style="text-align:center;display:flex;gap:12px;justify-content:center">
+      <button class="btn btn-sm" onclick="resetDNS()">Reset</button>
+      <button class="btn btn-primary btn-sm" onclick="stepDNS()">Next Step →</button>
+    </div>
+    <div id="dns-desc" style="margin-top:16px;font-size:14px;color:var(--muted);text-align:center;min-height:20px"></div>
+  `;
+  
+  window.stepDNS = function() {
+    step++;
+    if (step >= steps.length) { step = steps.length - 1; return; }
+    document.querySelectorAll('[id^="dns-step-"]').forEach((el, i) => {
+      el.style.opacity = i <= step ? '1' : '0.3';
+      if (i <= step) el.style.transform = 'translateY(-4px)';
+    });
+    document.getElementById('dns-desc').textContent = `Step ${step+1}: ${steps[step].label} — ${steps[step].desc}`;
+  };
+  
+  window.resetDNS = function() {
+    step = -1;
+    document.querySelectorAll('[id^="dns-step-"]').forEach(el => {
+      el.style.opacity = '0.3';
+      el.style.transform = 'none';
+    });
+    document.getElementById('dns-desc').textContent = '';
+  };
+}
+
+function renderProxy(el) {
+  el.innerHTML = `
+    <div class="interactive-title">Forward vs Reverse Proxy</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div style="background:var(--surface2);border-radius:12px;padding:20px;border:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:12px">Forward Proxy</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;flex-wrap:wrap">
+          <span>👤 Client</span><span style="color:var(--muted)">→</span>
+          <span style="background:rgba(124,106,255,0.2);padding:4px 10px;border-radius:20px;color:var(--accent)">Proxy</span>
+          <span style="color:var(--muted)">→</span><span>🌐 Server</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.6">Server sees <strong style="color:var(--text)">proxy's IP</strong>, not client's. Hides client identity.<br>Use: VPN, content filtering</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:12px;padding:20px;border:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;color:var(--accent2);margin-bottom:12px">Reverse Proxy</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;flex-wrap:wrap">
+          <span>🌐 Client</span><span style="color:var(--muted)">→</span>
+          <span style="background:rgba(255,106,106,0.2);padding:4px 10px;border-radius:20px;color:var(--accent2)">Nginx</span>
+          <span style="color:var(--muted)">→</span>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:10px">🖥 srv1</span>
+            <span style="font-size:10px">🖥 srv2</span>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.6">Client sees <strong style="color:var(--text)">one server</strong>; actually many backends. Hides infrastructure.<br>Use: Load balancing, SSL</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderLatency(el) {
+  el.innerHTML = `
+    <div class="interactive-title">Latency Simulator</div>
+    <div style="margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:13px">Distance: <strong id="lat-dist-label">Local Cache</strong></span>
+        <span style="font-size:13px;color:var(--accent)" id="lat-ms">~1ms</span>
+      </div>
+      <input type="range" min="0" max="4" value="0" id="lat-slider" oninput="updateLatency()" style="width:100%">
+    </div>
+    <div id="lat-bar-container" style="height:40px;background:var(--surface2);border-radius:8px;overflow:hidden;position:relative">
+      <div id="lat-bar" style="height:100%;background:var(--accent3);width:1%;transition:width 0.4s,background 0.4s;display:flex;align-items:center;padding-left:8px">
+        <span id="lat-bar-label" style="font-size:11px;font-weight:700;white-space:nowrap;color:#000"></span>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--muted)">
+      <span>Instant</span><span>Noticeable</span><span>Sluggish</span><span>Painful</span><span>Users Leave</span>
+    </div>
+  `;
+  
+  const data = [
+    { label: 'Local Cache', ms: '~0.1ms', pct: 1, color: '#6affb4' },
+    { label: 'Same DC (network)', ms: '~1ms', pct: 8, color: '#6affb4' },
+    { label: 'CDN Edge Node', ms: '~20ms', pct: 25, color: '#ffb86a' },
+    { label: 'Cross-Country', ms: '~80ms', pct: 60, color: '#ff9a6a' },
+    { label: 'Across Oceans', ms: '~200ms+', pct: 95, color: '#ff6a6a' },
+  ];
+  
+  window.updateLatency = function() {
+    const v = parseInt(document.getElementById('lat-slider').value);
+    const d = data[v];
+    document.getElementById('lat-dist-label').textContent = d.label;
+    document.getElementById('lat-ms').textContent = d.ms;
+    document.getElementById('lat-bar').style.width = d.pct + '%';
+    document.getElementById('lat-bar').style.background = d.color;
+    document.getElementById('lat-bar-label').textContent = d.ms;
+  };
+  updateLatency();
+}
+
+function renderHTTP(el) {
+  const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+  el.innerHTML = `
+    <div class="interactive-title">HTTP Request Builder</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      ${methods.map(m => `<button class="btn btn-sm" onclick="selectMethod('${m}')" id="method-${m}" style="${m==='GET'?'background:var(--accent);color:#fff;border-color:var(--accent)':''}">${m}</button>`).join('')}
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:20px;font-size:13px;line-height:1.8">
+      <span id="http-method" style="color:var(--accent4)">GET</span> <span style="color:var(--accent3)">/api/users/42</span> HTTP/1.1<br>
+      Host: <span style="color:var(--text)">api.example.com</span><br>
+      Authorization: <span style="color:var(--accent)">Bearer eyJhbGci...</span><br>
+      Accept: <span style="color:var(--muted)">application/json</span>
+    </div>
+    <div id="http-info" style="margin-top:16px;padding:14px;border-radius:10px;font-size:13px;background:rgba(124,106,255,0.08);border:1px solid rgba(124,106,255,0.15);color:var(--muted)">
+      GET: Retrieve resource. Safe, idempotent, cacheable. No request body.
+    </div>
+  `;
+  
+  const info = {
+    GET: 'GET: Retrieve resource. Safe, idempotent, cacheable. No request body.',
+    POST: 'POST: Create new resource. Not idempotent — multiple calls create multiple records. Has request body.',
+    PUT: 'PUT: Replace entire resource. Idempotent — same result every time. Full replacement.',
+    PATCH: 'PATCH: Partial update. Only send changed fields. More efficient than PUT for small changes.',
+    DELETE: 'DELETE: Remove resource. Idempotent — deleting already-deleted = same result (gone).',
+  };
+  
+  window.selectMethod = function(m) {
+    methods.forEach(x => {
+      const btn = document.getElementById(`method-${x}`);
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    });
+    const btn = document.getElementById(`method-${m}`);
+    btn.style.background = 'var(--accent)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'var(--accent)';
+    document.getElementById('http-method').textContent = m;
+    document.getElementById('http-info').textContent = info[m];
+  };
+}
+
+function renderAPI(el) {
+  el.innerHTML = `
+    <div class="interactive-title">API Call Flow</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(124,106,255,0.1);border:1px solid rgba(124,106,255,0.3);display:flex;align-items:center;justify-content:center;font-size:18px">📱</div>
+        <div style="flex:1;height:1px;background:var(--border);position:relative">
+          <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--muted);white-space:nowrap">POST /payments {amount:50}</div>
+        </div>
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,184,106,0.1);border:1px solid rgba(255,184,106,0.3);display:flex;align-items:center;justify-content:center;font-size:18px">🔐</div>
+        <div style="font-size:10px;color:var(--muted)">Auth</div>
+        <div style="flex:1;height:1px;background:var(--border);position:relative">
+          <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--muted);white-space:nowrap">Validated ✓</div>
+        </div>
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(106,255,180,0.1);border:1px solid rgba(106,255,180,0.3);display:flex;align-items:center;justify-content:center;font-size:18px">⚙️</div>
+        <div style="font-size:10px;color:var(--muted)">Logic</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:8px">
+        ${[
+          { code: 200, label: 'OK', color: '#6affb4', desc: 'Success' },
+          { code: 404, label: 'Not Found', color: '#ffb86a', desc: 'Resource missing' },
+          { code: 429, label: 'Too Many Requests', color: '#ff6a6a', desc: 'Rate limited' },
+        ].map(s => `
+          <div style="background:rgba(${s.color === '#6affb4' ? '106,255,180' : s.color === '#ffb86a' ? '255,184,106' : '255,106,106'},0.1);border-radius:10px;padding:12px;border:1px solid ${s.color}33;text-align:center">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:${s.color}">${s.code}</div>
+            <div style="font-size:11px;font-weight:600;color:${s.color};margin-top:4px">${s.label}</div>
+            <div style="font-size:11px;color:var(--muted)">${s.desc}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderREST(el) {
+  const endpoints = [
+    { method: 'GET', path: '/users', desc: 'List all users', color: '#6affb4' },
+    { method: 'POST', path: '/users', desc: 'Create user', color: '#6ac8ff' },
+    { method: 'GET', path: '/users/42', desc: 'Get user 42', color: '#6affb4' },
+    { method: 'PATCH', path: '/users/42', desc: 'Update user 42', color: '#ffb86a' },
+    { method: 'DELETE', path: '/users/42', desc: 'Delete user 42', color: '#ff6a6a' },
+  ];
+  
+  el.innerHTML = `
+    <div class="interactive-title">REST Resource Explorer — /users</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${endpoints.map(e => `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);cursor:pointer;transition:border-color 0.2s"
+          onmouseover="this.style.borderColor='${e.color}44'" onmouseout="this.style.borderColor='var(--border)'">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:${e.color};min-width:64px">${e.method}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent)">${e.path}</span>
+          <span style="flex:1;text-align:right;font-size:12px;color:var(--muted)">${e.desc}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderGraphQL(el) {
+  el.innerHTML = `
+    <div class="interactive-title">GraphQL vs REST Request Count</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div style="background:var(--surface2);border-radius:12px;padding:16px;border:1px solid rgba(255,106,106,0.2)">
+        <div style="font-size:12px;font-weight:700;color:var(--accent2);margin-bottom:12px">REST — 3 Requests</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px">
+          <div style="background:rgba(255,106,106,0.1);padding:6px 10px;border-radius:6px">GET /users/1</div>
+          <div style="background:rgba(255,106,106,0.1);padding:6px 10px;border-radius:6px">GET /users/1/posts</div>
+          <div style="background:rgba(255,106,106,0.1);padding:6px 10px;border-radius:6px">GET /posts/5/comments</div>
+        </div>
+      </div>
+      <div style="background:var(--surface2);border-radius:12px;padding:16px;border:1px solid rgba(106,255,180,0.2)">
+        <div style="font-size:12px;font-weight:700;color:var(--accent3);margin-bottom:12px">GraphQL — 1 Request</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;background:rgba(106,255,180,0.08);padding:10px;border-radius:6px;line-height:1.6">
+          query {<br>
+          &nbsp;&nbsp;user(id:1) {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;name<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;posts { title<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;comments {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;text }}}}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderWebSocket(el) {
+  let ws_messages = [];
+  let ws_open = false;
+  
+  el.innerHTML = `
+    <div class="interactive-title">WebSocket Chat Simulator</div>
+    <div style="height:160px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;overflow-y:auto;margin-bottom:12px;font-size:12px" id="ws-feed">
+      <div style="color:var(--muted);text-align:center;margin-top:40px">Click "Connect" to establish WebSocket connection</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-sm" id="ws-connect-btn" onclick="wsToggle()">Connect</button>
+      <input type="text" id="ws-input" placeholder="Type a message..." disabled
+        style="flex:1;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Syne',sans-serif;font-size:13px"
+        onkeydown="if(event.key==='Enter')wsSend()">
+      <button class="btn btn-sm btn-primary" onclick="wsSend()" id="ws-send">Send</button>
+    </div>
+  `;
+  
+  window.wsToggle = function() {
+    ws_open = !ws_open;
+    const feed = document.getElementById('ws-feed');
+    const btn = document.getElementById('ws-connect-btn');
+    const inp = document.getElementById('ws-input');
+    
+    if (ws_open) {
+      btn.textContent = 'Disconnect';
+      btn.style.color = 'var(--accent2)';
+      btn.style.borderColor = 'var(--accent2)';
+      inp.disabled = false;
+      feed.innerHTML = `<div style="color:var(--accent3)">✓ WebSocket connection established</div>`;
+      setTimeout(() => {
+        if (ws_open) wsAddMsg('Server', '👋 Welcome! You are connected.', '#6ac8ff');
+      }, 500);
+    } else {
+      btn.textContent = 'Connect';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+      inp.disabled = true;
+      wsAddMsg('System', '⚡ Connection closed', 'var(--muted)');
+    }
+  };
+  
+  const responses = ['📊 Live data update: users online 1,432', '🔔 New notification from server!', '⚡ Heartbeat ping — latency: 12ms', '📈 Real-time metrics updated'];
+  let ri = 0;
+  
+  window.wsSend = function() {
+    if (!ws_open) return;
+    const inp = document.getElementById('ws-input');
+    const msg = inp.value.trim();
+    if (!msg) return;
+    wsAddMsg('You', msg, 'var(--accent)');
+    inp.value = '';
+    setTimeout(() => wsAddMsg('Server', responses[ri++ % responses.length], '#6ac8ff'), 400);
+  };
+  
+  window.wsAddMsg = function(from, msg, color) {
+    const feed = document.getElementById('ws-feed');
+    if (!feed) return;
+    const div = document.createElement('div');
+    div.style.cssText = `padding:4px 0;border-bottom:1px solid var(--border);color:${color}`;
+    div.innerHTML = `<span style="opacity:0.6;font-size:10px">${from}:</span> ${msg}`;
+    feed.appendChild(div);
+    feed.scrollTop = feed.scrollHeight;
+  };
+}
+
+function renderWebhook(el) {
+  el.innerHTML = `
+    <div class="interactive-title">Webhook Event Flow</div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Your endpoint (registered):</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--bg);padding:10px;border-radius:8px;border:1px solid var(--border);color:var(--accent)">https://myapp.com/webhooks/stripe</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Events to receive:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">
+            ${['payment.success','payment.failed','refund.created'].map(e => `<span class="chip" style="background:rgba(255,184,106,0.1);color:#ffb86a">${e}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div id="webhook-log" style="height:120px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;font-family:'JetBrains Mono',monospace;font-size:11px">
+        <div style="color:var(--muted)">Waiting for events...</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="triggerWebhook('payment.success','$99.99')">Trigger Success</button>
+        <button class="btn btn-sm" onclick="triggerWebhook('payment.failed','card_declined')">Trigger Failure</button>
+      </div>
+    </div>
+  `;
+  
+  window.triggerWebhook = function(event, data) {
+    const log = document.getElementById('webhook-log');
+    const color = event.includes('success') ? 'var(--accent3)' : 'var(--accent2)';
+    const time = new Date().toLocaleTimeString();
+    const entry = document.createElement('div');
+    entry.style.cssText = `color:${color};border-bottom:1px solid var(--border);padding:4px 0`;
+    entry.innerHTML = `[${time}] POST /webhooks/stripe<br><span style="color:var(--muted)">${JSON.stringify({event, data, timestamp: Date.now()})}</span>`;
+    if (log.children[0]?.style.color === 'var(--muted)') log.innerHTML = '';
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+  };
+}
+
+function renderDatabases(el) {
+  const dbs = [
+    { name: 'PostgreSQL', type: 'Relational', color: '#6ac8ff', icon: '📊', when: 'ACID transactions, complex joins, structured data' },
+    { name: 'MongoDB', type: 'Document', color: '#6affb4', icon: '📄', when: 'Flexible schema, JSON-like data, evolving structure' },
+    { name: 'Redis', type: 'Key-Value', color: '#ffb86a', icon: '⚡', when: 'Caching, sessions, pub/sub, leaderboards' },
+    { name: 'Neo4j', type: 'Graph', color: '#ff6ac8', icon: '🕸', when: 'Social networks, recommendations, relationship queries' },
+  ];
+  
+  el.innerHTML = `
+    <div class="interactive-title">Database Type Selector</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      ${dbs.map(d => `
+        <div style="background:var(--surface2);border-radius:12px;padding:16px;border:1px solid ${d.color}22;cursor:pointer;transition:all 0.2s"
+          onmouseover="this.style.borderColor='${d.color}66';this.style.background='${d.color}0a'"
+          onmouseout="this.style.borderColor='${d.color}22';this.style.background='var(--surface2)'">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:20px">${d.icon}</span>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:${d.color}">${d.name}</div>
+              <div style="font-size:10px;color:var(--muted)">${d.type}</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5">${d.when}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderSQLNoSQL(el) {
+  el.innerHTML = `
+    <div class="interactive-title">Decision Helper</div>
+    <table class="compare-table">
+      <tr><th>Factor</th><th style="color:#6ac8ff">SQL</th><th style="color:#6affb4">NoSQL</th></tr>
+      ${[
+        ['Schema', 'Fixed, defined upfront', 'Flexible, evolves freely'],
+        ['Consistency', 'ACID guaranteed', 'Eventual (usually)'],
+        ['Scaling', 'Vertical first', 'Horizontal natively'],
+        ['Joins', 'Native, powerful', 'Avoid — denormalize'],
+        ['Use for', 'Finance, inventory, ERP', 'Social, catalogs, logs'],
+        ['Examples', 'PostgreSQL, MySQL', 'MongoDB, Cassandra, Redis'],
+      ].map(r => `<tr>${r.map((c,i)=>`<td style="${i===1?'color:#6ac8ff':i===2?'color:#6affb4':''}">${c}</td>`).join('')}</tr>`).join('')}
+    </table>
+  `;
+}
+
+function renderIndexing(el) {
+  el.innerHTML = `
+    <div class="interactive-title">B-Tree Index vs Table Scan</div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:12px;color:var(--muted)">Table size (rows): <strong id="idx-size-label" style="color:var(--text)">1,000,000</strong></label>
+      <input type="range" min="3" max="8" value="6" id="idx-slider" oninput="updateIndex()" style="width:100%;margin-top:6px">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div style="background:rgba(255,106,106,0.08);border:1px solid rgba(255,106,106,0.2);border-radius:12px;padding:16px;text-align:center">
+        <div style="font-size:12px;color:var(--accent2);margin-bottom:8px">No Index (Full Scan)</div>
+        <div style="font-size:28px;font-weight:800;color:var(--accent2)" id="idx-scan">1,000,000</div>
+        <div style="font-size:11px;color:var(--muted)">comparisons</div>
+      </div>
+      <div style="background:rgba(106,255,180,0.08);border:1px solid rgba(106,255,180,0.2);border-radius:12px;padding:16px;text-align:center">
+        <div style="font-size:12px;color:var(--accent3);margin-bottom:8px">With B-Tree Index</div>
+        <div style="font-size:28px;font-weight:800;color:var(--accent3)" id="idx-tree">20</div>
+        <div style="font-size:11px;color:var(--muted)">comparisons (log₂ n)</div>
+      </div>
+    </div>
+    <div id="idx-speedup" style="text-align:center;margin-top:16px;font-size:14px;font-weight:700;color:var(--accent)"></div>
+  `;
+  
+  window.updateIndex = function() {
+    const v = parseInt(document.getElementById('idx-slider').value);
+    const n = Math.pow(10, v);
+    const logn = Math.ceil(Math.log2(n));
+    document.getElementById('idx-size-label').textContent = n.toLocaleString();
+    document.getElementById('idx-scan').textContent = n.toLocaleString();
+    document.getElementById('idx-tree').textContent = logn;
+    document.getElementById('idx-speedup').textContent = `${Math.round(n/logn).toLocaleString()}× faster with index!`;
+  };
+  updateIndex();
+}
+
+function renderVPartition(el) {
+  el.innerHTML = `
+    <div class="interactive-title">Vertical Partitioning Visualizer</div>
+    <div style="background:rgba(255,106,106,0.08);border:1px solid rgba(255,106,106,0.2);border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="font-size:12px;color:var(--accent2);margin-bottom:8px">Before: One Wide Table (40 columns)</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${['id','name','email','avatar','bio','phone','address','card_no','billing_zip','password_hash','last_login','failed_attempts','2fa_key','pref_lang','pref_timezone','notifications'].map((c,i) =>
+          `<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${i<4?'rgba(124,106,255,0.2)':i<9?'rgba(255,184,106,0.2)':i<13?'rgba(255,106,106,0.2)':'rgba(106,200,255,0.2)'}">${c}</span>`
+        ).join('')}
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      ${[
+        { name: 'Profile', color: '#7c6aff', cols: ['id','name','email','avatar','bio'] },
+        { name: 'Billing', color: '#ffb86a', cols: ['id','card_no','billing_zip','address'] },
+        { name: 'Auth', color: '#ff6a6a', cols: ['id','password_hash','last_login','2fa_key'] },
+      ].map(p => `
+        <div style="background:${p.color}11;border:1px solid ${p.color}33;border-radius:10px;padding:12px">
+          <div style="font-size:12px;font-weight:700;color:${p.color};margin-bottom:8px">${p.name} Table</div>
+          ${p.cols.map(c => `<div style="font-size:10px;padding:3px 0;border-bottom:1px solid ${p.color}22;color:var(--muted)">${c}</div>`).join('')}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderCaching(el) {
+  let cache = {};
+  let hits = 0, misses = 0;
+  
+  el.innerHTML = `
+    <div class="interactive-title">Cache-Aside Pattern Simulator</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Request key:</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${['user:42','user:99','post:1','post:2','user:42'].map(k => `<button class="btn btn-sm" onclick="cacheRequest('${k}')">${k}</button>`).join('')}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:rgba(106,255,180,0.1);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--accent3)" id="cache-hits">0</div>
+          <div style="font-size:10px;color:var(--muted)">Cache Hits</div>
+        </div>
+        <div style="background:rgba(255,106,106,0.1);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--accent2)" id="cache-misses">0</div>
+          <div style="font-size:10px;color:var(--muted)">Cache Misses</div>
+        </div>
+      </div>
+    </div>
+    <div id="cache-state" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;font-family:'JetBrains Mono',monospace;font-size:12px;min-height:60px">
+      <div style="color:var(--muted)">Cache: empty</div>
+    </div>
+    <div id="cache-log" style="margin-top:10px;font-size:12px;color:var(--muted);min-height:20px"></div>
+  `;
+  
+  window.cacheRequest = function(key) {
+    if (cache[key]) {
+      hits++;
+      document.getElementById('cache-log').innerHTML = `<span style="color:var(--accent3)">⚡ CACHE HIT for "${key}" — returned in ~0.1ms</span>`;
+    } else {
+      misses++;
+      cache[key] = { data: `data_for_${key}`, ts: Date.now() };
+      document.getElementById('cache-log').innerHTML = `<span style="color:var(--accent2)">🔍 CACHE MISS for "${key}" — queried DB (~50ms), stored in cache</span>`;
+    }
+    document.getElementById('cache-hits').textContent = hits;
+    document.getElementById('cache-misses').textContent = misses;
+    const state = Object.keys(cache).map(k => `<div style="color:var(--accent)">${k}: <span style="color:var(--text)">${cache[k].data}</span></div>`).join('');
+    document.getElementById('cache-state').innerHTML = state || '<div style="color:var(--muted)">Cache: empty</div>';
+  };
+}
+
+function renderDenorm(el) {
+  el.innerHTML = `
+    <div class="interactive-title">Normalization vs Denormalization</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent2);margin-bottom:8px">Normalized (3 JOINs)</div>
+        <div style="font-size:11px;background:var(--bg);padding:10px;border-radius:8px;font-family:'JetBrains Mono',monospace;line-height:1.7;border:1px solid var(--border);color:var(--muted)">
+          SELECT o.id, u.name,<br>p.title, o.price<br>FROM orders o<br>JOIN users u ON o.user_id=u.id<br>JOIN products p ON o.product_id=p.id
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent3);margin-bottom:8px">Denormalized (0 JOINs)</div>
+        <div style="font-size:11px;background:var(--bg);padding:10px;border-radius:8px;font-family:'JetBrains Mono',monospace;line-height:1.7;border:1px solid var(--border);color:var(--muted)">
+          SELECT id, user_name,<br>product_title, price<br>FROM orders<br>WHERE id = 42<br>&nbsp;
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:12px;padding:12px;background:rgba(255,184,106,0.08);border-radius:10px;border:1px solid rgba(255,184,106,0.2);font-size:13px;color:var(--muted)">
+      ⚠ Trade-off: Denormalized orders table stores <strong style="color:var(--text)">user_name</strong> and <strong style="color:var(--text)">product_title</strong> — if a user renames themselves, all their orders need updating.
+    </div>
+  `;
+}
+
+function renderBlob(el) {
+  el.innerHTML = `
+    <div class="interactive-title">Blob Storage Flow</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${[
+        { n: '1', text: 'User uploads image.jpg (2MB)', from: '📱 Client', to: '⚙️ App Server', color: '#7c6aff' },
+        { n: '2', text: 'App streams file to S3', from: '⚙️ Server', to: '☁️ Amazon S3', color: '#ffb86a' },
+        { n: '3', text: 'S3 returns URL', from: '☁️ S3', to: '⚙️ Server', color: '#6affb4' },
+        { n: '4', text: 'Store URL in database', from: '⚙️ Server', to: '🗄️ Postgres', color: '#6ac8ff' },
+        { n: '5', text: 'Serve via CDN globally', from: '☁️ S3', to: '🌍 CDN Edges', color: '#ff6ac8' },
+      ].map(s => `
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:22px;height:22px;border-radius:50%;background:${s.color}22;border:1px solid ${s.color}44;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${s.color};flex-shrink:0">${s.n}</div>
+          <div style="font-size:12px;color:var(--muted)">${s.from}</div>
+          <div style="flex:1;height:1px;background:${s.color}44;position:relative">
+            <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:10px;color:${s.color};white-space:nowrap">${s.text}</div>
+          </div>
+          <div style="font-size:12px;color:var(--muted)">${s.to}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderVScale(el) {
+  let level = 0;
+  const levels = [
+    { cpu: '2 vCPU', ram: '4GB', cost: '$20/mo', color: '#6affb4' },
+    { cpu: '8 vCPU', ram: '32GB', cost: '$160/mo', color: '#ffb86a' },
+    { cpu: '32 vCPU', ram: '128GB', cost: '$800/mo', color: '#ff9a6a' },
+    { cpu: '64 vCPU', ram: '256GB', cost: '$2,400/mo', color: '#ff6a6a' },
+  ];
+  
+  el.innerHTML = `
+    <div class="interactive-title">Vertical Scaling — Upgrade Machine</div>
+    <div style="display:flex;align-items:flex-end;gap:12px;height:180px;justify-content:center;margin-bottom:16px" id="vscale-bars">
+      ${levels.map((l, i) => `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px" id="vbar-${i}">
+          <div style="font-size:10px;color:var(--muted)">${l.cost}</div>
+          <div style="width:60px;background:${l.color};border-radius:6px 6px 0 0;transition:height 0.4s,opacity 0.3s;opacity:${i<=level?'1':'0.3'}" style="height:${(i+1)*40}px" id="vbar-box-${i}"></div>
+          <div style="font-size:10px;text-align:center;color:var(--muted)">${l.cpu}<br>${l.ram}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="text-align:center;display:flex;gap:12px;justify-content:center">
+      <button class="btn btn-sm" onclick="vscaleDown()" id="vscale-down">↓ Downgrade</button>
+      <button class="btn btn-sm btn-primary" onclick="vscaleUp()" id="vscale-up">↑ Upgrade</button>
+    </div>
+  `;
+  
+  function setHeights() {
+    levels.forEach((l, i) => {
+      const box = document.getElementById(`vbar-box-${i}`);
+      if (box) {
+        box.style.height = `${(i+1)*40}px`;
+        box.style.opacity = i <= level ? '1' : '0.3';
+      }
+    });
+  }
+  
+  window.vscaleUp = function() {
+    if (level < 3) { level++; setHeights(); }
+    if (level === 3) showToast('⚠ Maximum vertical scale reached! Time to scale horizontally.');
+  };
+  window.vscaleDown = function() { if (level > 0) { level--; setHeights(); } };
+  setHeights();
+}
+
+function renderHScale(el) {
+  let servers = 1;
+  
+  el.innerHTML = `
+    <div class="interactive-title">Horizontal Scaling Simulator</div>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="display:inline-block;padding:10px 20px;background:rgba(255,184,106,0.1);border:1px solid rgba(255,184,106,0.3);border-radius:10px;font-size:13px;font-weight:600;color:#ffb86a;margin-bottom:16px">
+        ⚖ Load Balancer
+      </div>
+      <div id="hscale-servers" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px"></div>
+      <div style="margin-top:16px;font-size:22px;font-weight:800;color:var(--accent)" id="hscale-capacity">capacity: 1×</div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-sm" onclick="hscaleRemove()">− Remove Server</button>
+      <button class="btn btn-sm btn-primary" onclick="hscaleAdd()">+ Add Server</button>
+    </div>
+  `;
+  
+  function render() {
+    const cont = document.getElementById('hscale-servers');
+    cont.innerHTML = Array.from({length: servers}, (_, i) => `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div style="width:52px;height:52px;border-radius:12px;background:rgba(124,106,255,0.1);border:1px solid rgba(124,106,255,0.3);display:flex;align-items:center;justify-content:center;font-size:22px">🖥</div>
+        <div style="font-size:10px;color:var(--muted)">srv-${i+1}</div>
+      </div>
+    `).join('');
+    document.getElementById('hscale-capacity').textContent = `capacity: ${servers}×`;
+  }
+  
+  window.hscaleAdd = function() { if (servers < 8) { servers++; render(); } else showToast('Maximum demo servers shown (8). Theoretically unlimited!'); };
+  window.hscaleRemove = function() { if (servers > 1) { servers--; render(); } };
+  render();
+}
+
+function renderLoadBalancer(el) {
+  let algo = 'roundrobin';
+  let rr = 0;
+  const servers = [{name:'Server A', load:0},{name:'Server B',load:0},{name:'Server C',load:0}];
+  
+  el.innerHTML = `
+    <div class="interactive-title">Load Balancer Simulator</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      ${['roundrobin','leastconn','random'].map(a => `
+        <button class="btn btn-sm" id="algo-${a}" onclick="setAlgo('${a}')" style="${a==='roundrobin'?'background:var(--accent);color:#fff;border-color:var(--accent)':''}">${a==='roundrobin'?'Round Robin':a==='leastconn'?'Least Connections':'Random'}</button>
+      `).join('')}
+    </div>
+    <div id="lb-servers" style="display:flex;gap:12px;margin-bottom:16px"></div>
+    <button class="btn btn-primary btn-sm" onclick="sendRequest()" style="width:100%">Send Request</button>
+  `;
+  
+  function renderServers(active) {
+    document.getElementById('lb-servers').innerHTML = servers.map((s,i) => `
+      <div style="flex:1;background:${active===i?'rgba(124,106,255,0.2)':'var(--surface2)'};border:1px solid ${active===i?'var(--accent)':'var(--border)'};border-radius:12px;padding:12px;text-align:center;transition:all 0.3s">
+        <div style="font-size:20px">🖥</div>
+        <div style="font-size:12px;font-weight:600;margin-top:4px">${s.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${s.load} requests</div>
+        <div style="margin-top:8px;height:4px;background:var(--border);border-radius:2px"><div style="height:100%;background:var(--accent);width:${Math.min(100,s.load*10)}%;border-radius:2px"></div></div>
+      </div>
+    `).join('');
+  }
+  
+  window.setAlgo = function(a) {
+    algo = a;
+    ['roundrobin','leastconn','random'].forEach(x => {
+      const b = document.getElementById(`algo-${x}`);
+      b.style.background = '';b.style.color = '';b.style.borderColor = '';
+    });
+    const b = document.getElementById(`algo-${a}`);
+    b.style.background = 'var(--accent)'; b.style.color = '#fff'; b.style.borderColor = 'var(--accent)';
+  };
+  
+  window.sendRequest = function() {
+    let chosen;
+    if (algo === 'roundrobin') { chosen = rr % 3; rr++; }
+    else if (algo === 'leastconn') { chosen = servers.reduce((mi,s,i) => s.load < servers[mi].load ? i : mi, 0); }
+    else { chosen = Math.floor(Math.random()*3); }
+    servers[chosen].load++;
+    renderServers(chosen);
+    setTimeout(() => renderServers(-1), 600);
+  };
+  renderServers(-1);
+}
+
+function renderReplication(el) {
+  el.innerHTML = `
+    <div class="interactive-title">Primary-Replica Pattern</div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px">
+      <div style="display:flex;align-items:center;gap:16px;width:100%">
+        <div style="flex:1;text-align:center">
+          <div style="display:inline-block;padding:12px 20px;background:rgba(124,106,255,0.1);border:1px solid rgba(124,106,255,0.3);border-radius:12px;font-size:13px;font-weight:700;color:var(--accent)">📱 App Server</div>
+        </div>
+        <div style="flex:2;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;padding:3px 10px;background:rgba(255,106,106,0.1);border-radius:20px;color:#ff6a6a">WRITE</span>
+            <div style="flex:1;height:1px;background:rgba(255,106,106,0.3)"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="flex:1;height:1px;background:rgba(106,255,180,0.3)"></div>
+            <span style="font-size:11px;padding:3px 10px;background:rgba(106,255,180,0.1);border-radius:20px;color:#6affb4">READ</span>
+          </div>
+        </div>
+        <div style="flex:2;display:flex;flex-direction:column;gap:12px">
+          <div style="padding:12px;background:rgba(255,106,106,0.08);border:1px solid rgba(255,106,106,0.2);border-radius:10px;text-align:center">
+            <div style="font-size:12px;font-weight:700;color:#ff6a6a">Primary DB</div>
+            <div style="font-size:10px;color:var(--muted)">Read + Write</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            ${['Replica 1','Replica 2'].map(r => `
+              <div style="flex:1;padding:10px;background:rgba(106,255,180,0.08);border:1px solid rgba(106,255,180,0.2);border-radius:10px;text-align:center">
+                <div style="font-size:11px;font-weight:600;color:#6affb4">${r}</div>
+                <div style="font-size:10px;color:var(--muted)">Read Only</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+      <div style="padding:12px;background:rgba(255,184,106,0.08);border-radius:10px;border:1px solid rgba(255,184,106,0.2);font-size:12px;color:var(--muted);width:100%;text-align:center">
+        ⏱ Replication lag: writes appear on replicas after ~1-100ms delay
+      </div>
+    </div>
+  `;
+}
+
+function renderSharding(el) {
+  const shards = [[], [], []];
+  const colors = ['#7c6aff','#ffb86a','#6affb4'];
+  
+  el.innerHTML = `
+    <div class="interactive-title">Sharding by user_id % 3</div>
+    <div style="margin-bottom:16px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${[1,2,3,4,5,6,7,8,9].map(id => `
+          <button class="btn btn-sm" onclick="addUser(${id})">user_id: ${id}</button>
+        `).join('')}
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px" id="shard-display">
+      ${shards.map((s,i) => `
+        <div style="background:${colors[i]}11;border:1px solid ${colors[i]}33;border-radius:12px;padding:12px;min-height:80px" id="shard-${i}">
+          <div style="font-size:12px;font-weight:700;color:${colors[i]};margin-bottom:8px">Shard ${i}</div>
+          <div id="shard-items-${i}" style="font-size:11px;color:var(--muted)">empty</div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="text-align:center;margin-top:10px"><button class="btn btn-sm" onclick="clearShards()">Clear</button></div>
+  `;
+  
+  const shardData = [[],[],[]];
+  
+  window.addUser = function(id) {
+    const shard = id % 3;
+    shardData[shard].push(id);
+    [0,1,2].forEach(i => {
+      document.getElementById(`shard-items-${i}`).innerHTML = shardData[i].length > 0
+        ? shardData[i].map(u => `<span style="color:${colors[i]}">user_${u}</span>`).join(', ')
+        : 'empty';
+    });
+  };
+  
+  window.clearShards = function() { shardData.forEach(s => s.length = 0); [0,1,2].forEach(i => document.getElementById(`shard-items-${i}`).textContent = 'empty'); };
+}
+
+function renderCAP(el) {
+  el.innerHTML = `
+    <div class="interactive-title">CAP Theorem — Pick Your Trade-off</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div style="background:rgba(124,106,255,0.08);border:1px solid rgba(124,106,255,0.2);border-radius:12px;padding:16px;cursor:pointer;transition:all 0.2s"
+        onmouseover="this.style.background='rgba(124,106,255,0.15)'" onmouseout="this.style.background='rgba(124,106,255,0.08)'">
+        <div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:8px">CP Systems</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">Consistency + Partition Tolerance<br>During a partition: <strong style="color:var(--text)">reject requests</strong> to stay consistent<br><br><span class="chip" style="background:rgba(124,106,255,0.15);color:var(--accent)">MongoDB</span><span class="chip" style="background:rgba(124,106,255,0.15);color:var(--accent)">Redis</span><span class="chip" style="background:rgba(124,106,255,0.15);color:var(--accent)">HBase</span></div>
+        <div style="margin-top:8px;font-size:12px;font-style:italic;color:var(--muted)">Use for: banking, inventory</div>
+      </div>
+      <div style="background:rgba(106,255,180,0.08);border:1px solid rgba(106,255,180,0.2);border-radius:12px;padding:16px;cursor:pointer;transition:all 0.2s"
+        onmouseover="this.style.background='rgba(106,255,180,0.15)'" onmouseout="this.style.background='rgba(106,255,180,0.08)'">
+        <div style="font-size:14px;font-weight:700;color:var(--accent3);margin-bottom:8px">AP Systems</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">Availability + Partition Tolerance<br>During a partition: <strong style="color:var(--text)">return stale data</strong> to stay available<br><br><span class="chip" style="background:rgba(106,255,180,0.15);color:var(--accent3)">Cassandra</span><span class="chip" style="background:rgba(106,255,180,0.15);color:var(--accent3)">DynamoDB</span></div>
+        <div style="margin-top:8px;font-size:12px;font-style:italic;color:var(--muted)">Use for: social feeds, catalogs</div>
+      </div>
+    </div>
+    <div style="padding:12px;background:rgba(255,184,106,0.08);border-radius:10px;border:1px solid rgba(255,184,106,0.2);font-size:13px;color:var(--muted);text-align:center">
+      ⚠ Network partitions are <strong style="color:var(--text)">unavoidable</strong> in distributed systems — P is not optional, so you always choose between C and A.
+    </div>
+  `;
+}
+
+function renderCDN(el) {
+  el.innerHTML = `
+    <div class="interactive-title">CDN Request Flow</div>
+    <div style="position:relative;height:220px;margin-bottom:12px">
+      <canvas id="cdn-canvas" width="600" height="220" style="width:100%"></canvas>
+    </div>
+    <div style="text-align:center;font-size:12px;color:var(--muted)">
+      First request → origin server (slow). Subsequent requests → nearest edge (fast).
+    </div>
+  `;
+  
+  const canvas = document.getElementById('cdn-canvas');
+  const ctx = canvas.getContext('2d');
+  
+  function draw() {
+    ctx.clearRect(0, 0, 600, 220);
+    const nodes = [
+      { x: 300, y: 30, label: 'Origin (US)', color: '#ff6a6a', size: 30 },
+      { x: 100, y: 150, label: 'Edge: London', color: '#7c6aff', size: 24 },
+      { x: 250, y: 160, label: 'Edge: Tokyo', color: '#7c6aff', size: 24 },
+      { x: 400, y: 155, label: 'Edge: Mumbai', color: '#7c6aff', size: 24 },
+      { x: 520, y: 160, label: 'Edge: SP', color: '#7c6aff', size: 24 },
+    ];
+    
+    nodes.forEach((n, i) => {
+      if (i > 0) {
+        ctx.beginPath();
+        ctx.moveTo(n.x, n.y);
+        ctx.lineTo(300, 30);
+        ctx.strokeStyle = 'rgba(124,106,255,0.2)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    });
+    
+    nodes.forEach(n => {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.size/2, 0, Math.PI*2);
+      ctx.fillStyle = n.color + '33';
+      ctx.fill();
+      ctx.strokeStyle = n.color;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      
+      ctx.fillStyle = n.color;
+      ctx.font = `bold 10px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(n.label, n.x, n.y + n.size/2 + 14);
+    });
+    
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🌐', 300, 35);
+    [100,250,400,520].forEach(x => ctx.fillText('📡', x, 155));
+  }
+  draw();
+}
+
+function renderIdempotency(el) {
+  let requestSent = false;
+  
+  el.innerHTML = `
+    <div class="interactive-title">Idempotency Key Demo</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+      POST /payments<br>
+      Idempotency-Key: <span style="color:var(--accent)" id="idem-key">click-generate</span><br>
+      Content-Type: application/json<br>
+      <br>
+      { "amount": 99.99, "currency": "USD" }
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn btn-sm" onclick="genKey()">Generate Key</button>
+      <button class="btn btn-sm btn-primary" onclick="sendPayment()">Send Request</button>
+    </div>
+    <div id="idem-log" style="min-height:60px;font-size:12px;color:var(--muted)"></div>
+  `;
+  
+  let currentKey = '';
+  let processedKeys = {};
+  
+  window.genKey = function() {
+    currentKey = 'pay_' + Math.random().toString(36).substr(2,9);
+    document.getElementById('idem-key').textContent = currentKey;
+    requestSent = false;
+    document.getElementById('idem-log').innerHTML = `<span style="color:var(--muted)">New key generated. Ready to send.</span>`;
+  };
+  
+  window.sendPayment = function() {
+    if (!currentKey) { document.getElementById('idem-log').innerHTML = '<span style="color:var(--accent2)">Generate a key first!</span>'; return; }
+    const log = document.getElementById('idem-log');
+    if (processedKeys[currentKey]) {
+      log.innerHTML = `<span style="color:var(--accent3)">✓ DUPLICATE DETECTED — Idempotency key "${currentKey}" already processed.<br>Returning cached result: payment_id=PAY_12345 (no double charge!)</span>`;
+    } else {
+      processedKeys[currentKey] = true;
+      log.innerHTML = `<span style="color:var(--accent)">→ Processing payment...<br></span><span style="color:var(--accent3)">✓ SUCCESS — payment_id=PAY_12345, key "${currentKey}" stored.<br>Safe to retry — server will return same result.</span>`;
+    }
+  };
+}
+
+function renderMicroservices(el) {
+  el.innerHTML = `
+    <div class="interactive-title">Microservices Architecture</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
+      ${[
+        { name: 'Users', db: 'users_db', color: '#7c6aff', api: 'GET /users/{id}' },
+        { name: 'Orders', db: 'orders_db', color: '#ffb86a', api: 'POST /orders' },
+        { name: 'Payments', db: 'payments_db', color: '#6affb4', api: 'POST /charge' },
+        { name: 'Inventory', db: 'inv_db', color: '#ff6ac8', api: 'GET /stock' },
+      ].map(s => `
+        <div style="background:${s.color}0a;border:1px solid ${s.color}33;border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:13px;font-weight:700;color:${s.color}">${s.name}<br>Service</div>
+          <div style="margin:8px 0;height:1px;background:${s.color}22"></div>
+          <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace">${s.api}</div>
+          <div style="margin-top:8px;font-size:10px;padding:4px;background:${s.color}15;border-radius:6px;color:${s.color}">📦 ${s.db}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="margin-top:12px;padding:12px;text-align:center;background:rgba(255,184,106,0.06);border-radius:10px;font-size:12px;color:var(--muted);border:1px solid rgba(255,184,106,0.15)">
+      Each service owns its database — no shared DB allowed. Communication via HTTP or message queue.
+    </div>
+  `;
+}
+
+function renderMessageQueue(el) {
+  let queueItems = [];
+  let processing = false;
+  
+  el.innerHTML = `
+    <div class="interactive-title">Message Queue Simulator</div>
+    <div style="display:flex;gap:12px;margin-bottom:16px;align-items:flex-start">
+      <div style="flex:1;background:rgba(124,106,255,0.08);border-radius:12px;padding:12px;border:1px solid rgba(124,106,255,0.2)">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px">Producer</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Order Service</div>
+        <button class="btn btn-sm btn-primary" onclick="publishMsg()" style="width:100%">Publish Event</button>
+      </div>
+      <div style="flex:2;background:rgba(255,184,106,0.08);border-radius:12px;padding:12px;border:1px solid rgba(255,184,106,0.2)">
+        <div style="font-size:12px;font-weight:700;color:#ffb86a;margin-bottom:8px">Queue <span style="color:var(--muted)">(<span id="q-count">0</span> pending)</span></div>
+        <div id="q-items" style="min-height:40px;display:flex;flex-direction:column;gap:4px">
+          <div style="font-size:11px;color:var(--muted);text-align:center">empty</div>
+        </div>
+      </div>
+      <div style="flex:1;background:rgba(106,255,180,0.08);border-radius:12px;padding:12px;border:1px solid rgba(106,255,180,0.2)">
+        <div style="font-size:12px;font-weight:700;color:var(--accent3);margin-bottom:8px">Consumer</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Email Service</div>
+        <button class="btn btn-sm" onclick="consumeMsg()" style="width:100%">Process Next</button>
+      </div>
+    </div>
+    <div id="q-log" style="font-size:12px;color:var(--muted);min-height:20px"></div>
+  `;
+  
+  const events = ['order.created {id:1042}','order.created {id:1043}','payment.processed {$49}','order.created {id:1044}'];
+  let ei = 0;
+  
+  window.publishMsg = function() {
+    const msg = events[ei++ % events.length];
+    queueItems.push(msg);
+    renderQueue();
+    document.getElementById('q-log').innerHTML = `<span style="color:var(--accent)">→ Published: ${msg}</span>`;
+  };
+  
+  window.consumeMsg = function() {
+    if (queueItems.length === 0) { document.getElementById('q-log').innerHTML = '<span style="color:var(--muted)">Queue is empty</span>'; return; }
+    const msg = queueItems.shift();
+    renderQueue();
+    document.getElementById('q-log').innerHTML = `<span style="color:var(--accent3)">✓ Consumed & processed: ${msg}</span>`;
+  };
+  
+  function renderQueue() {
+    document.getElementById('q-count').textContent = queueItems.length;
+    const el = document.getElementById('q-items');
+    if (queueItems.length === 0) { el.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center">empty</div>'; return; }
+    el.innerHTML = queueItems.map(m => `<div style="font-size:10px;padding:4px 8px;background:rgba(255,184,106,0.1);border-radius:6px;color:#ffb86a;font-family:'JetBrains Mono',monospace">${m}</div>`).join('');
+  }
+}
+
+function renderRateLimit(el) {
+  let tokens = 10;
+  const MAX = 10;
+  let requests = 0;
+  
+  el.innerHTML = `
+    <div class="interactive-title">Token Bucket Rate Limiter</div>
+    <div style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:600">Tokens: <span id="rl-tokens" style="color:var(--accent)">10</span> / 10</span>
+        <span style="font-size:11px;color:var(--muted)">Refills 1 token/second</span>
+      </div>
+      <div style="height:16px;background:var(--surface2);border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <div id="rl-bar" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));width:100%;transition:width 0.3s,background 0.3s;border-radius:8px"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn btn-sm btn-primary" onclick="rlRequest()" style="flex:1">Send Request</button>
+      <button class="btn btn-sm" onclick="rlRefill()">Refill (+1)</button>
+      <button class="btn btn-sm" onclick="rlRefillAll()">Refill All</button>
+    </div>
+    <div id="rl-log" style="min-height:80px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:11px;overflow-y:auto;max-height:80px"></div>
+  `;
+  
+  function updateBar() {
+    const pct = (tokens/MAX)*100;
+    document.getElementById('rl-tokens').textContent = tokens;
+    const bar = document.getElementById('rl-bar');
+    bar.style.width = pct + '%';
+    bar.style.background = tokens > 6 ? 'linear-gradient(90deg,var(--accent),var(--accent3))' : tokens > 2 ? 'linear-gradient(90deg,var(--accent4),var(--accent2))' : 'var(--accent2)';
+  }
+  
+  window.rlRequest = function() {
+    requests++;
+    const log = document.getElementById('rl-log');
+    const entry = document.createElement('div');
+    entry.style.cssText = `padding:2px 0;border-bottom:1px solid var(--border)`;
+    if (tokens > 0) {
+      tokens--;
+      entry.innerHTML = `<span style="color:var(--accent3)">✓ Request #${requests} — 200 OK (${tokens} tokens left)</span>`;
+    } else {
+      entry.innerHTML = `<span style="color:var(--accent2)">✗ Request #${requests} — 429 Too Many Requests</span>`;
+    }
+    log.insertBefore(entry, log.firstChild);
+    updateBar();
+  };
+  
+  window.rlRefill = function() { tokens = Math.min(MAX, tokens+1); updateBar(); };
+  window.rlRefillAll = function() { tokens = MAX; updateBar(); };
+}
+
+function renderAPIGateway(el) {
+  el.innerHTML = `
+    <div class="interactive-title">API Gateway — Single Entry Point</div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+      <div style="display:flex;gap:10px">
+        ${['📱 Mobile','💻 Web','🤖 3rd Party'].map(c => `
+          <div style="padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600">${c}</div>
+        `).join('')}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:2px;align-items:center">
+        <div style="width:1px;height:20px;background:var(--border2)"></div>
+        <div style="padding:12px 24px;background:rgba(124,106,255,0.12);border:1px solid rgba(124,106,255,0.3);border-radius:12px;text-align:center">
+          <div style="font-size:14px;font-weight:700;color:var(--accent)">API Gateway</div>
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;justify-content:center">
+            ${['🔑 Auth','⚡ Rate Limit','→ Route','🔄 Transform','💾 Cache'].map(f => `<span class="chip" style="background:rgba(124,106,255,0.15);color:var(--accent)">${f}</span>`).join('')}
+          </div>
+        </div>
+        <div style="width:1px;height:20px;background:var(--border2)"></div>
+      </div>
+      <div style="display:flex;gap:10px">
+        ${['Users','Orders','Payments','Search'].map((s,i) => {
+          const colors = ['#7c6aff','#ffb86a','#6affb4','#ff6ac8'];
+          return `<div style="padding:8px 14px;background:${colors[i]}11;border:1px solid ${colors[i]}33;border-radius:8px;font-size:12px;font-weight:600;color:${colors[i]}">${s}</div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ─── BG CANVAS ───────────────────────────────────────────────────────────
+function initBGCanvas() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  
+  const dots = Array.from({length: 60}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: (Math.random() - 0.5) * 0.3,
+    r: Math.random() * 2 + 1,
+  }));
+  
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    dots.forEach(d => {
+      d.x += d.vx; d.y += d.vy;
+      if (d.x < 0 || d.x > canvas.width) d.vx *= -1;
+      if (d.y < 0 || d.y > canvas.height) d.vy *= -1;
+    });
+    
+    dots.forEach((a, i) => {
+      dots.slice(i+1).forEach(b => {
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = `rgba(124,106,255,${0.15 * (1 - dist/120)})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      });
+      ctx.beginPath();
+      ctx.arc(a.x, a.y, a.r, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(124,106,255,0.3)';
+      ctx.fill();
+    });
+    requestAnimationFrame(animate);
+  }
+  animate();
+  
+  // Hero orb
+  const hero = document.getElementById('hero-canvas');
+  if (hero) {
+    const hctx = hero.getContext('2d');
+    let t = 0;
+    function drawHero() {
+      hctx.clearRect(0, 0, 300, 300);
+      const cx = 150, cy = 150;
+      for (let i = 0; i < 6; i++) {
+        const angle = (i/6) * Math.PI*2 + t;
+        const r = 80 + Math.sin(t*2 + i) * 20;
+        const x = cx + Math.cos(angle) * r;
+        const y = cy + Math.sin(angle) * r;
+        hctx.beginPath();
+        hctx.arc(x, y, 8, 0, Math.PI*2);
+        const colors = ['#7c6aff','#ff6a6a','#6affb4','#ffb86a','#ff6ac8','#6ac8ff'];
+        hctx.fillStyle = colors[i] + '88';
+        hctx.fill();
+        hctx.beginPath();
+        hctx.moveTo(cx, cy);
+        hctx.lineTo(x, y);
+        hctx.strokeStyle = colors[i] + '44';
+        hctx.lineWidth = 1;
+        hctx.stroke();
+      }
+      hctx.beginPath();
+      hctx.arc(cx, cy, 30, 0, Math.PI*2);
+      hctx.fillStyle = 'rgba(124,106,255,0.15)';
+      hctx.fill();
+      hctx.strokeStyle = 'rgba(124,106,255,0.4)';
+      hctx.lineWidth = 1.5;
+      hctx.stroke();
+      t += 0.01;
+      requestAnimationFrame(drawHero);
+    }
+    drawHero();
+  }
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────
+buildSidebar();
+buildGroupsGrid();
+updateProgress();
+initBGCanvas();
+
+// Logo click
+document.querySelector('.sidebar-logo').addEventListener('click', showHome);
+
+
+// ─── MOBILE SIDEBAR ───────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const hb = document.getElementById('hamburger');
+  const ov = document.getElementById('sidebar-overlay');
+  sb.classList.toggle('open');
+  hb.classList.toggle('open');
+  ov.classList.toggle('open');
+}
+
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+// Close sidebar when a concept is selected on mobile
+const origShowConcept = showConcept;
+window._mobileCloseOnNav = function() {
+  if (window.innerWidth <= 768) closeSidebar();
+};
+
+// Patch mobile progress update
+const origUpdateProgress = updateProgress;
+window.updateProgress = function() {
+  origUpdateProgress();
+  const done = doneConcepts.size;
+  const mpt = document.getElementById('mobile-progress-text');
+  const mpf = document.getElementById('mobile-progress-fill');
+  if (mpt) mpt.textContent = done + '/30';
+  if (mpf) mpf.style.width = (done/30*100) + '%';
+};
+updateProgress();
+
+window.addEventListener('resize', () => {
+  const canvas = document.getElementById('bg-canvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+</script>
+</body>
+</html>
